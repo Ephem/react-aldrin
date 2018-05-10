@@ -10,9 +10,5 @@
         ],
         "react"
     ],
-    "plugins": [
-        "syntax-async-generators",
-        "transform-async-generator-functions",
-        "transform-class-properties"
-    ]
+    "plugins": ["transform-class-properties"]
 }

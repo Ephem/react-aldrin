@@ -2,33 +2,33 @@
   "name": "react-ssr-renderer",
   "version": "0.0.1",
   "description": "",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {
     "start": "nodemon index.js",
+    "build": "rimraf dist && babel src --out-dir dist --ignore __tests__",
+    "build:watch":
+      "rimraf dist && babel src --out-dir dist --ignore __tests__ --watch",
     "test": "jest",
     "test:watch": "jest --watch"
   },
   "author": "Fredrik Höglund",
   "license": "MIT",
   "dependencies": {
-    "babel-cli": "^6.26.0",
-    "babel-core": "^6.26.0",
-    "babel-plugin-syntax-async-generators": "^6.13.0",
-    "babel-plugin-transform-async-generator-functions": "^6.24.1",
-    "babel-plugin-transform-class-properties": "^6.24.1",
-    "babel-polyfill": "^6.26.0",
-    "babel-preset-env": "^1.6.1",
-    "babel-preset-react": "^6.24.1",
-    "babel-register": "^6.26.0",
-    "fbjs": "^0.8.16",
-    "react": "^16.3.2",
-    "react-reconciler": "^0.10.0"
+    "fbjs": "0.8.16",
+    "react": "16.3.2",
+    "react-reconciler": "0.10.0"
   },
   "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-core": "^6.26.3",
+    "babel-plugin-transform-class-properties": "^6.24.1",
+    "babel-preset-env": "^1.7.0",
+    "babel-preset-react": "^6.24.1",
     "jest": "^22.4.3",
     "nodemon": "^1.17.3",
     "prettier": "^1.12.1",
     "prettier-cli": "^0.1.0",
-    "react-dom": "16.3.2"
+    "react-dom": "16.3.2",
+    "rimraf": "^2.6.2"
   }
 }

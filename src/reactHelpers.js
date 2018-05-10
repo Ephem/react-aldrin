@@ -1,6 +1,8 @@
 import React from 'react';
 
-export const SSRContext = React.createContext({});
+function noop() {}
+
+export const SSRContext = React.createContext(noop);
 
 class CallDoneOnMount extends React.Component {
     componentDidMount() {

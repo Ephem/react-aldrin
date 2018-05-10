@@ -263,6 +263,8 @@ export function renderToStaticMarkupAsync(element) {
 }
 
 export default {
+    renderToString,
+    renderToStringAsync,
     renderToStaticMarkup,
     renderToStaticMarkupAsync
 };

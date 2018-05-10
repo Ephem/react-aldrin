@@ -7,10 +7,22 @@ import createMarkupForStyles from './reactUtils/createMarkupForStyles';
 import escapeTextForBrowser from './reactUtils/escapeTextForBrowser';
 
 export const ROOT_TYPE = Symbol('ROOT_TYPE');
+export const ROOT_STATIC_TYPE = Symbol('ROOT_STATIC_TYPE');
 export const RAW_TEXT_TYPE = Symbol('RAW_TEXT_TYPE');
 
 function isEventListener(propName) {
     return propName.slice(0, 2).toLowerCase() === 'on';
+}
+
+function getMarkupForChildren(children, staticMarkup) {
+    const childrenMarkup = [];
+    for (let i = 0, l = children.length; i < l; i += 1) {
+        const previousWasText = i > 0 && children[i - 1].type === RAW_TEXT_TYPE;
+        childrenMarkup.push(
+            children[i].toString(staticMarkup, previousWasText)
+        );
+    }
+    return childrenMarkup.join('');
 }
 
 export class SSRTreeNode {
@@ -38,21 +50,33 @@ export class SSRTreeNode {
     attributesToString() {
         return this.attributes.length ? ' ' + this.attributes.join(' ') : '';
     }
-    toString() {
+    toString(staticMarkup, previousWasText, isRoot) {
+        if (this.type === ROOT_STATIC_TYPE) {
+            let markup = getMarkupForChildren(this.children, staticMarkup);
+            return markup;
+        }
         if (this.type === ROOT_TYPE) {
-            return this.children.map(c => c.toString()).join('');
+            return this.children
+                .map(c => c.toString(staticMarkup, undefined, true))
+                .join('');
         }
         if (this.type === RAW_TEXT_TYPE) {
+            if (!staticMarkup && previousWasText) {
+                return '<!-- -->' + escapeTextForBrowser(this.text);
+            }
             return escapeTextForBrowser(this.text);
         }
 
         const selfClose = !this.children.length && omittedCloseTags[this.type];
         const startTag = `<${this.type}${this.attributesToString()}${
-            selfClose ? '/>' : '>'
-        }`;
-        const children = this.children.map(c => c.toString()).join('');
+            isRoot ? ' data-reactroot=""' : ''
+        }${selfClose ? '/>' : '>'}`;
+        const childrenMarkup = getMarkupForChildren(
+            this.children,
+            staticMarkup
+        );
         const endTag = selfClose ? '' : `</${this.type}>`;
-        return startTag + children + endTag;
+        return startTag + childrenMarkup + endTag;
     }
 }
 
@@ -188,20 +212,45 @@ function renderToRoot(element, root) {
     return SSRRenderer.updateContainer(element, root, null);
 }
 
-export function renderToStaticMarkup(element) {
+export function renderToString(element) {
     let ssrTreeRootNode = new SSRTreeNode(ROOT_TYPE);
     let root = SSRRenderer.createContainer(ssrTreeRootNode);
     renderToRoot(element, root);
     return ssrTreeRootNode.toString();
 }
 
-export function renderToStaticMarkupAsync(element) {
+export function renderToStringAsync(element) {
     return new Promise((resolve, reject) => {
         let ssrTreeRootNode = new SSRTreeNode(ROOT_TYPE);
         let root = SSRRenderer.createContainer(ssrTreeRootNode);
 
         function markSSRDone() {
             resolve(ssrTreeRootNode.toString());
+        }
+
+        renderToRoot(
+            <SSRContext.Provider value={markSSRDone}>
+                {element}
+            </SSRContext.Provider>,
+            root
+        );
+    });
+}
+
+export function renderToStaticMarkup(element) {
+    let ssrTreeRootNode = new SSRTreeNode(ROOT_STATIC_TYPE);
+    let root = SSRRenderer.createContainer(ssrTreeRootNode);
+    renderToRoot(element, root);
+    return ssrTreeRootNode.toString(true);
+}
+
+export function renderToStaticMarkupAsync(element) {
+    return new Promise((resolve, reject) => {
+        let ssrTreeRootNode = new SSRTreeNode(ROOT_STATIC_TYPE);
+        let root = SSRRenderer.createContainer(ssrTreeRootNode);
+
+        function markSSRDone() {
+            resolve(ssrTreeRootNode.toString(true));
         }
 
         renderToRoot(

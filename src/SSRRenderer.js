@@ -4,6 +4,7 @@ import emptyObject from 'fbjs/lib/emptyObject';
 import { SSRContext } from './reactHelpers';
 import omittedCloseTags from './reactUtils/omittedCloseTags';
 import createMarkupForStyles from './reactUtils/createMarkupForStyles';
+import escapeTextForBrowser from './reactUtils/escapeTextForBrowser';
 
 export const ROOT_TYPE = Symbol('ROOT_TYPE');
 export const RAW_TEXT_TYPE = Symbol('RAW_TEXT_TYPE');
@@ -42,7 +43,7 @@ export class SSRTreeNode {
             return this.children.map(c => c.toString()).join('');
         }
         if (this.type === RAW_TEXT_TYPE) {
-            return this.text;
+            return escapeTextForBrowser(this.text);
         }
 
         const selfClose = !this.children.length && omittedCloseTags[this.type];

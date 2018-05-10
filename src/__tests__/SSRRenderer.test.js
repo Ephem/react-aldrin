@@ -26,6 +26,18 @@ describe('SSRRenderer', () => {
                 </div>
             );
         });
+        it('should render multiple text nodes correctly', () => {
+            expectStaticMarkupToMatch(
+                <div>
+                    {'Text 1'}
+                    {'Text 2'}
+                    {'Text 3'}
+                </div>
+            );
+        });
+        it('should escape text correctly', () => {
+            expectStaticMarkupToMatch(<div>{`"&'<>`}</div>);
+        });
         it('should render a div with a two nested span and text', () => {
             expectStaticMarkupToMatch(
                 <div>

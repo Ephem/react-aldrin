@@ -21,8 +21,6 @@ var _emptyObject = require('fbjs/lib/emptyObject');
 
 var _emptyObject2 = _interopRequireDefault(_emptyObject);
 
-var _reactHelpers = require('./react/reactHelpers');
-
 var _omittedCloseTags = require('./reactUtils/omittedCloseTags');
 
 var _omittedCloseTags2 = _interopRequireDefault(_omittedCloseTags);
@@ -214,7 +212,7 @@ function renderToString(element) {
     return ssrTreeRootNode.toString();
 }
 
-function renderToStringAsync(element) {
+function renderToStringAsync(element, SSRContext) {
     return new Promise((resolve, reject) => {
         let ssrTreeRootNode = new SSRTreeNode(ROOT_TYPE);
         let root = SSRRenderer.createContainer(ssrTreeRootNode);
@@ -224,7 +222,7 @@ function renderToStringAsync(element) {
         }
 
         renderToRoot(_react2.default.createElement(
-            _reactHelpers.SSRContext.Provider,
+            SSRContext.Provider,
             { value: markSSRDone },
             element
         ), root);
@@ -238,7 +236,7 @@ function renderToStaticMarkup(element) {
     return ssrTreeRootNode.toString(true);
 }
 
-function renderToStaticMarkupAsync(element) {
+function renderToStaticMarkupAsync(element, SSRContext) {
     return new Promise((resolve, reject) => {
         let ssrTreeRootNode = new SSRTreeNode(ROOT_STATIC_TYPE);
         let root = SSRRenderer.createContainer(ssrTreeRootNode);
@@ -248,7 +246,7 @@ function renderToStaticMarkupAsync(element) {
         }
 
         renderToRoot(_react2.default.createElement(
-            _reactHelpers.SSRContext.Provider,
+            SSRContext.Provider,
             { value: markSSRDone },
             element
         ), root);

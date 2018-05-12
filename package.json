@@ -5,10 +5,11 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "npm run build:babel && npm run build:rollup",
-    "build:babel": "rimraf dist && babel src --out-dir dist --ignore __tests__",
+    "build:babel":
+      "rimraf dist && babel src/renderer --out-dir dist --ignore __tests__",
     "build:rollup": "rimraf react.js && rollup -c",
-    "build:babel:watch": "rimraf dist && babel src --out-dir dist --ignore __tests__ --watch",
-    "build:rollup:watch": "rimraf react.js && rollup -c --watch",
+    "build:babel:watch": "npm run build:babel -- --watch",
+    "build:rollup:watch": "npm run build:rollup -- --watch",
     "test": "jest",
     "test:watch": "jest --watch"
   },

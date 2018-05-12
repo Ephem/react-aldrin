@@ -2,7 +2,9 @@ import React from 'react';
 
 function noop() {}
 
-export const SSRContext = React.createContext(noop);
+export const SSRContext = React.createContext({
+    markSSRDone: noop
+});
 
 class CallDoneOnMount extends React.Component {
     componentDidMount() {
@@ -15,6 +17,6 @@ class CallDoneOnMount extends React.Component {
 
 export const MarkSSRDone = () => (
     <SSRContext.Consumer>
-        {markSSRDone => <CallDoneOnMount done={markSSRDone} />}
+        {({ markSSRDone }) => <CallDoneOnMount done={SSRContext.markSSRDone} />}
     </SSRContext.Consumer>
 );

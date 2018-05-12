@@ -1,7 +1,6 @@
 import React from 'react';
 import Reconciler from 'react-reconciler';
 import emptyObject from 'fbjs/lib/emptyObject';
-import { SSRContext } from './react/reactHelpers';
 import omittedCloseTags from './reactUtils/omittedCloseTags';
 import createMarkupForStyles from './reactUtils/createMarkupForStyles';
 import escapeTextForBrowser from './reactUtils/escapeTextForBrowser';
@@ -219,7 +218,7 @@ export function renderToString(element) {
     return ssrTreeRootNode.toString();
 }
 
-export function renderToStringAsync(element) {
+export function renderToStringAsync(element, SSRContext) {
     return new Promise((resolve, reject) => {
         let ssrTreeRootNode = new SSRTreeNode(ROOT_TYPE);
         let root = SSRRenderer.createContainer(ssrTreeRootNode);
@@ -244,7 +243,7 @@ export function renderToStaticMarkup(element) {
     return ssrTreeRootNode.toString(true);
 }
 
-export function renderToStaticMarkupAsync(element) {
+export function renderToStaticMarkupAsync(element, SSRContext) {
     return new Promise((resolve, reject) => {
         let ssrTreeRootNode = new SSRTreeNode(ROOT_STATIC_TYPE);
         let root = SSRRenderer.createContainer(ssrTreeRootNode);

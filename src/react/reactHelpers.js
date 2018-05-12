@@ -38,13 +38,27 @@ export class SSRContextProvider extends React.Component {
             }
         };
 
+        this.requestCounter = 0;
         this.state = {
             context: {
+                increaseRequests: this.increaseRequests,
+                decreaseRequests: this.decreaseRequests,
                 markSSRDone: this.markSSRDone,
                 cache
             }
         };
     }
+
+    increaseRequests = () => {
+        this.requestCounter += 1;
+    };
+
+    decreaseRequests = () => {
+        this.requestCounter -= 1;
+        if (this.requestCounter === 0) {
+            this.markSSRDone(this.state.context.cache);
+        }
+    };
 
     render() {
         return (
@@ -68,14 +82,21 @@ export class FetcherInner extends React.Component {
     componentDidMount() {
         if (!this.state.data && !this.state.isLoading) {
             this.setState({ isLoading: true });
+            this.props.increaseRequests();
             let res = this.props.resource.read(
                 this.props.cache,
                 this.props.resourceKey
             );
             if (res instanceof Promise) {
-                res.then(data => this.setState({ isLoading: false, data }));
+                res.then(data => {
+                    this.setState({ isLoading: false, data }, () => {
+                        this.props.decreaseRequests();
+                    });
+                });
             } else if (res) {
-                this.setState({ isLoading: false, data: res });
+                this.setState({ isLoading: false, data: res }, () => {
+                    this.props.decreaseRequests();
+                });
             }
         }
     }
@@ -86,6 +107,14 @@ export class FetcherInner extends React.Component {
 
 export const Fetcher = React.forwardRef((props, ref) => (
     <SSRContext.Consumer>
-        {({ cache }) => <FetcherInner {...props} cache={cache} ref={ref} />}
+        {({ cache, increaseRequests, decreaseRequests }) => (
+            <FetcherInner
+                {...props}
+                cache={cache}
+                increaseRequests={increaseRequests}
+                decreaseRequests={decreaseRequests}
+                ref={ref}
+            />
+        )}
     </SSRContext.Consumer>
 ));

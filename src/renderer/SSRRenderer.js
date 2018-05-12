@@ -218,19 +218,19 @@ export function renderToString(element) {
     return ssrTreeRootNode.toString();
 }
 
-export function renderToStringAsync(element, SSRContext) {
+export function renderToStringAsync(element, SSRContextProvider) {
     return new Promise((resolve, reject) => {
         let ssrTreeRootNode = new SSRTreeNode(ROOT_TYPE);
         let root = SSRRenderer.createContainer(ssrTreeRootNode);
 
-        function markSSRDone() {
-            resolve(ssrTreeRootNode.toString());
+        function markSSRDone(cache) {
+            resolve({ html: ssrTreeRootNode.toString(), cache });
         }
 
         renderToRoot(
-            <SSRContext.Provider value={markSSRDone}>
+            <SSRContextProvider markSSRDone={markSSRDone}>
                 {element}
-            </SSRContext.Provider>,
+            </SSRContextProvider>,
             root
         );
     });
@@ -243,19 +243,19 @@ export function renderToStaticMarkup(element) {
     return ssrTreeRootNode.toString(true);
 }
 
-export function renderToStaticMarkupAsync(element, SSRContext) {
+export function renderToStaticMarkupAsync(element, SSRContextProvider) {
     return new Promise((resolve, reject) => {
         let ssrTreeRootNode = new SSRTreeNode(ROOT_STATIC_TYPE);
         let root = SSRRenderer.createContainer(ssrTreeRootNode);
 
-        function markSSRDone() {
-            resolve(ssrTreeRootNode.toString(true));
+        function markSSRDone(cache) {
+            resolve({ html: ssrTreeRootNode.toString(true), cache });
         }
 
         renderToRoot(
-            <SSRContext.Provider value={markSSRDone}>
+            <SSRContextProvider markSSRDone={markSSRDone}>
                 {element}
-            </SSRContext.Provider>,
+            </SSRContextProvider>,
             root
         );
     });

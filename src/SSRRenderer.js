@@ -1,7 +1,7 @@
 import React from 'react';
 import Reconciler from 'react-reconciler';
 import emptyObject from 'fbjs/lib/emptyObject';
-import { SSRContext } from './reactHelpers';
+import { SSRContext } from './react/reactHelpers';
 import omittedCloseTags from './reactUtils/omittedCloseTags';
 import createMarkupForStyles from './reactUtils/createMarkupForStyles';
 import escapeTextForBrowser from './reactUtils/escapeTextForBrowser';

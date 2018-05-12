@@ -4,10 +4,11 @@
   "description": "",
   "main": "dist/index.js",
   "scripts": {
-    "start": "nodemon index.js",
-    "build": "rimraf dist && babel src --out-dir dist --ignore __tests__",
-    "build:watch":
-      "rimraf dist && babel src --out-dir dist --ignore __tests__ --watch",
+    "build": "npm run build:babel && npm run build:rollup",
+    "build:babel": "rimraf dist && babel src --out-dir dist --ignore __tests__",
+    "build:rollup": "rimraf react.js && rollup -c",
+    "build:babel:watch": "rimraf dist && babel src --out-dir dist --ignore __tests__ --watch",
+    "build:rollup:watch": "rimraf react.js && rollup -c --watch",
     "test": "jest",
     "test:watch": "jest --watch"
   },
@@ -21,6 +22,7 @@
   "devDependencies": {
     "babel-cli": "^6.26.0",
     "babel-core": "^6.26.3",
+    "babel-plugin-external-helpers": "^6.22.0",
     "babel-plugin-transform-class-properties": "^6.24.1",
     "babel-preset-env": "^1.7.0",
     "babel-preset-react": "^6.24.1",
@@ -29,6 +31,10 @@
     "prettier": "^1.12.1",
     "prettier-cli": "^0.1.0",
     "react-dom": "16.3.2",
-    "rimraf": "^2.6.2"
+    "rimraf": "^2.6.2",
+    "rollup": "^0.58.2",
+    "rollup-plugin-babel": "^3.0.4",
+    "rollup-plugin-node-resolve": "^3.3.0",
+    "rollup-plugin-uglify": "^3.0.0"
   }
 }

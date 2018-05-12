@@ -21,7 +21,7 @@ var _emptyObject = require('fbjs/lib/emptyObject');
 
 var _emptyObject2 = _interopRequireDefault(_emptyObject);
 
-var _reactHelpers = require('./reactHelpers');
+var _reactHelpers = require('./react/reactHelpers');
 
 var _omittedCloseTags = require('./reactUtils/omittedCloseTags');
 

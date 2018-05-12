@@ -1,2 +1,2 @@
 export * from './SSRRenderer';
-export * from './reactHelpers';
+export * from './react';

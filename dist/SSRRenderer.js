@@ -43,11 +43,11 @@ function isEventListener(propName) {
     return propName.slice(0, 2).toLowerCase() === 'on';
 }
 
-function getMarkupForChildren(children, staticMarkup) {
+function getMarkupForChildren(children, staticMarkup, selectedValue) {
     const childrenMarkup = [];
     for (let i = 0, l = children.length; i < l; i += 1) {
         const previousWasText = i > 0 && children[i - 1].type === RAW_TEXT_TYPE;
-        childrenMarkup.push(children[i].toString(staticMarkup, previousWasText));
+        childrenMarkup.push(children[i].toString(staticMarkup, previousWasText, undefined, selectedValue));
     }
     return childrenMarkup.join('');
 }
@@ -86,7 +86,7 @@ class SSRTreeNode {
             for (var _iterator = Object.keys(attributes)[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
                 const key = _step.value;
 
-                if (attributes.hasOwnProperty(key) && attributes[key] !== undefined) {
+                if (attributes.hasOwnProperty(key) && attributes[key] != null && attributes[key] !== false) {
                     let value = attributes[key];
                     if (value === true) {
                         value = '';
@@ -111,8 +111,10 @@ class SSRTreeNode {
 
         return attributesArray.length ? ' ' + attributesArray.join(' ') : '';
     }
-    toString(staticMarkup, previousWasText, isRoot) {
+    toString(staticMarkup, previousWasText, isRoot, selectedValue) {
         let renderAttributes = this.attributes;
+        let selectSelectedValue;
+        let childrenMarkup;
         if (this.type === ROOT_STATIC_TYPE) {
             let markup = getMarkupForChildren(this.children, staticMarkup);
             return markup;
@@ -137,16 +139,44 @@ class SSRTreeNode {
             }
         } else if (this.type === 'select') {
             if (renderAttributes.value || renderAttributes.defaultValue) {
+                selectSelectedValue = renderAttributes.value || renderAttributes.defaultValue;
                 renderAttributes = Object.assign({}, renderAttributes, {
                     value: undefined,
                     defaultValue: undefined
                 });
             }
+        } else if (this.type === 'textarea') {
+            if (renderAttributes.value || renderAttributes.defaultValue) {
+                this.appendChild(new SSRTreeNode(RAW_TEXT_TYPE, renderAttributes.value || renderAttributes.defaultValue));
+                renderAttributes = Object.assign({}, renderAttributes, {
+                    value: undefined,
+                    defaultValue: undefined
+                });
+            }
+        } else if (this.type === 'option') {
+            childrenMarkup = getMarkupForChildren(this.children, staticMarkup, selectSelectedValue);
+            let selected = null;
+            if (selectedValue != null) {
+                let value = renderAttributes.value != null ? renderAttributes.value : childrenMarkup;
+                if (Array.isArray(selectedValue)) {
+                    for (let i = 0; i < selectedValue.length; i++) {
+                        if (selectedValue[i] === value) {
+                            selected = true;
+                            break;
+                        }
+                    }
+                } else {
+                    selected = selectedValue === value;
+                }
+                renderAttributes = Object.assign({}, {
+                    selected
+                }, renderAttributes);
+            }
         }
 
         const selfClose = !this.children.length && _omittedCloseTags2.default[this.type];
         const startTag = `<${this.type}${this.attributesToString(renderAttributes)}${isRoot ? ' data-reactroot=""' : ''}${selfClose ? '/>' : '>'}`;
-        const childrenMarkup = getMarkupForChildren(this.children, staticMarkup);
+        childrenMarkup = childrenMarkup || getMarkupForChildren(this.children, staticMarkup, selectSelectedValue);
         const endTag = selfClose ? '' : `</${this.type}>`;
         return startTag + childrenMarkup + endTag;
     }

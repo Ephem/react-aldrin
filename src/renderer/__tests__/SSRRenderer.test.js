@@ -103,15 +103,15 @@ describe('SSRRenderer', () => {
     });
     it('should render select with correct selected option based on value', () => {
         expectMarkupToMatch(
-            <select value="Option 2">
-                <option>Option 1</option>
-                <option>Option 2</option>
+            <select value="2">
+                <option value="1">Option 1</option>
+                <option value="2">Option 2</option>
             </select>
         );
     });
     it('should render select with correct selected option based on defaultValue', () => {
         expectMarkupToMatch(
-            <select value="Option 2">
+            <select defaultValue="Option 2">
                 <option>Option 1</option>
                 <option>Option 2</option>
             </select>
@@ -119,7 +119,7 @@ describe('SSRRenderer', () => {
     });
     it('should render select with correct selected multiple options', () => {
         expectMarkupToMatch(
-            <select value={['Option 1', 'Option 3']}>
+            <select multiple value={['Option 1', 'Option 3']}>
                 <option>Option 1</option>
                 <option>Option 2</option>
                 <option>Option 3</option>
@@ -128,7 +128,7 @@ describe('SSRRenderer', () => {
     });
     it('should render select with correct selected multiple options based on value', () => {
         expectMarkupToMatch(
-            <select value={['1', '3']}>
+            <select multiple value={['1', '3']}>
                 <option value="1">Option 1</option>
                 <option value="2">Option 2</option>
                 <option value="3">Option 3</option>

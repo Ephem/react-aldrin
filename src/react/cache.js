@@ -125,16 +125,22 @@ export function createCache(invalidator) {
                     throw error;
             }
         },
-        read(resource, key, miss, missArg) {
+        read(resource, key, miss, missArg, enableSuspense) {
             const record = getRecord(resource.name, key);
             switch (record.status) {
                 case Empty:
                     // Load the requested resource.
                     const suspender = miss(missArg);
                     load(record, suspender);
+                    if (enableSuspense) {
+                        throw suspender;
+                    }
                     return suspender;
                 case Pending:
                     // There's already a pending request.
+                    if (enableSuspense) {
+                        throw record.suspender;
+                    }
                     return record.suspender;
                 case Resolved:
                     return record.value;
@@ -162,7 +168,12 @@ export function createCache(invalidator) {
     return cache;
 }
 
-export function createResource(resourceName, loadResource, hash) {
+export function createResource(
+    resourceName,
+    loadResource,
+    hash,
+    enableSuspense
+) {
     const resource = {
         name: resourceName,
         get(cache, key) {
@@ -174,10 +185,22 @@ export function createResource(resourceName, loadResource, hash) {
         },
         read(cache, key) {
             if (hash === undefined) {
-                return cache.read(resource, key, loadResource, key);
+                return cache.read(
+                    resource,
+                    key,
+                    loadResource,
+                    key,
+                    enableSuspense
+                );
             }
             const hashedKey = hash(key);
-            return cache.read(resource, hashedKey, loadResource, key);
+            return cache.read(
+                resource,
+                hashedKey,
+                loadResource,
+                ke,
+                enableSuspensey
+            );
         },
         preload(cache, key) {
             if (hash === undefined) {

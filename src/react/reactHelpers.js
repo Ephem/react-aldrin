@@ -73,35 +73,62 @@ export class FetcherInner extends React.Component {
     constructor(props) {
         super(props);
 
-        let data = this.props.resource.get(
-            this.props.cache,
-            this.props.resourceKey
-        );
-        this.state = { isLoading: false, data };
-    }
-    componentDidMount() {
-        if (!this.state.data && !this.state.isLoading) {
-            this.setState({ isLoading: true });
-            this.props.increaseRequests();
-            let res = this.props.resource.read(
+        let data;
+        let error;
+        try {
+            data = this.props.resource.get(
                 this.props.cache,
                 this.props.resourceKey
             );
-            if (res instanceof Promise) {
-                res.then(data => {
-                    this.setState({ isLoading: false, data }, () => {
+        } catch (e) {
+            error = e;
+        }
+
+        this.state = { isLoading: false, data, error };
+    }
+    componentDidMount() {
+        if (!this.state.data && !this.state.isLoading) {
+            this.setState({ isLoading: true }, () => {
+                this.props.increaseRequests();
+                let res;
+                let error;
+                try {
+                    res = this.props.resource.read(
+                        this.props.cache,
+                        this.props.resourceKey
+                    );
+                } catch (e) {
+                    error = e;
+                }
+                if (error) {
+                    this.setState({ isLoading: false, error }, () => {
                         this.props.decreaseRequests();
                     });
-                });
-            } else if (res) {
-                this.setState({ isLoading: false, data: res }, () => {
-                    this.props.decreaseRequests();
-                });
-            }
+                } else if (res instanceof Promise) {
+                    res
+                        .then(data => {
+                            this.setState({ isLoading: false, data }, () => {
+                                this.props.decreaseRequests();
+                            });
+                        })
+                        .catch(error => {
+                            this.setState({ isLoading: false, error }, () => {
+                                this.props.decreaseRequests();
+                            });
+                        });
+                } else if (res) {
+                    this.setState({ isLoading: false, data: res }, () => {
+                        this.props.decreaseRequests();
+                    });
+                }
+            });
         }
     }
     render() {
-        return this.props.children(this.state.data);
+        return this.props.children({
+            data: this.state.data,
+            error: this.state.error
+        });
     }
 }
 

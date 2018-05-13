@@ -156,9 +156,6 @@ export function createCache(invalidator) {
         },
         deserialize(cache) {
             resourceCache = cache;
-        },
-        gr() {
-            return resourceCache;
         }
     };
 

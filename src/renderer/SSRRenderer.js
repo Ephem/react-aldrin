@@ -28,7 +28,7 @@ export class SSRTreeNode {
     constructor(type, text) {
         this.type = type;
         this.text = text;
-        this.attributes = [];
+        this.attributes = {};
     }
     children = [];
     appendChild(child) {
@@ -44,12 +44,26 @@ export class SSRTreeNode {
         this.text = text;
     }
     setAttribute(name, value) {
-        this.attributes.push(name + '="' + value + '"');
+        this.attributes[name] = value;
     }
-    attributesToString() {
-        return this.attributes.length ? ' ' + this.attributes.join(' ') : '';
+    attributesToString(attributes) {
+        const attributesArray = [];
+        for (const key of Object.keys(attributes)) {
+            if (
+                attributes.hasOwnProperty(key) &&
+                attributes[key] !== undefined
+            ) {
+                let value = attributes[key];
+                if (value === true) {
+                    value = '';
+                }
+                attributesArray.push(key + '="' + value + '"');
+            }
+        }
+        return attributesArray.length ? ' ' + attributesArray.join(' ') : '';
     }
     toString(staticMarkup, previousWasText, isRoot) {
+        let renderAttributes = this.attributes;
         if (this.type === ROOT_STATIC_TYPE) {
             let markup = getMarkupForChildren(this.children, staticMarkup);
             return markup;
@@ -65,11 +79,37 @@ export class SSRTreeNode {
             }
             return escapeTextForBrowser(this.text);
         }
+        if (this.type === 'input') {
+            if (
+                renderAttributes.defaultValue ||
+                renderAttributes.defaultChecked
+            ) {
+                renderAttributes = Object.assign({}, renderAttributes, {
+                    value:
+                        renderAttributes.value != null
+                            ? renderAttributes.value
+                            : renderAttributes.defaultValue,
+                    defaultValue: undefined,
+                    checked:
+                        renderAttributes.Checked != null
+                            ? renderAttributes.Checked
+                            : renderAttributes.defaultChecked,
+                    defaultChecked: undefined
+                });
+            }
+        } else if (this.type === 'select') {
+            if (renderAttributes.value || renderAttributes.defaultValue) {
+                renderAttributes = Object.assign({}, renderAttributes, {
+                    value: undefined,
+                    defaultValue: undefined
+                });
+            }
+        }
 
         const selfClose = !this.children.length && omittedCloseTags[this.type];
-        const startTag = `<${this.type}${this.attributesToString()}${
-            isRoot ? ' data-reactroot=""' : ''
-        }${selfClose ? '/>' : '>'}`;
+        const startTag = `<${this.type}${this.attributesToString(
+            renderAttributes
+        )}${isRoot ? ' data-reactroot=""' : ''}${selfClose ? '/>' : '>'}`;
         const childrenMarkup = getMarkupForChildren(
             this.children,
             staticMarkup

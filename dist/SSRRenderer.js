@@ -58,7 +58,7 @@ class SSRTreeNode {
 
         this.type = type;
         this.text = text;
-        this.attributes = [];
+        this.attributes = {};
     }
 
     appendChild(child) {
@@ -74,12 +74,45 @@ class SSRTreeNode {
         this.text = text;
     }
     setAttribute(name, value) {
-        this.attributes.push(name + '="' + value + '"');
+        this.attributes[name] = value;
     }
-    attributesToString() {
-        return this.attributes.length ? ' ' + this.attributes.join(' ') : '';
+    attributesToString(attributes) {
+        const attributesArray = [];
+        var _iteratorNormalCompletion = true;
+        var _didIteratorError = false;
+        var _iteratorError = undefined;
+
+        try {
+            for (var _iterator = Object.keys(attributes)[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+                const key = _step.value;
+
+                if (attributes.hasOwnProperty(key) && attributes[key] !== undefined) {
+                    let value = attributes[key];
+                    if (value === true) {
+                        value = '';
+                    }
+                    attributesArray.push(key + '="' + value + '"');
+                }
+            }
+        } catch (err) {
+            _didIteratorError = true;
+            _iteratorError = err;
+        } finally {
+            try {
+                if (!_iteratorNormalCompletion && _iterator.return) {
+                    _iterator.return();
+                }
+            } finally {
+                if (_didIteratorError) {
+                    throw _iteratorError;
+                }
+            }
+        }
+
+        return attributesArray.length ? ' ' + attributesArray.join(' ') : '';
     }
     toString(staticMarkup, previousWasText, isRoot) {
+        let renderAttributes = this.attributes;
         if (this.type === ROOT_STATIC_TYPE) {
             let markup = getMarkupForChildren(this.children, staticMarkup);
             return markup;
@@ -93,9 +126,26 @@ class SSRTreeNode {
             }
             return (0, _escapeTextForBrowser2.default)(this.text);
         }
+        if (this.type === 'input') {
+            if (renderAttributes.defaultValue || renderAttributes.defaultChecked) {
+                renderAttributes = Object.assign({}, renderAttributes, {
+                    value: renderAttributes.value != null ? renderAttributes.value : renderAttributes.defaultValue,
+                    defaultValue: undefined,
+                    checked: renderAttributes.Checked != null ? renderAttributes.Checked : renderAttributes.defaultChecked,
+                    defaultChecked: undefined
+                });
+            }
+        } else if (this.type === 'select') {
+            if (renderAttributes.value || renderAttributes.defaultValue) {
+                renderAttributes = Object.assign({}, renderAttributes, {
+                    value: undefined,
+                    defaultValue: undefined
+                });
+            }
+        }
 
         const selfClose = !this.children.length && _omittedCloseTags2.default[this.type];
-        const startTag = `<${this.type}${this.attributesToString()}${isRoot ? ' data-reactroot=""' : ''}${selfClose ? '/>' : '>'}`;
+        const startTag = `<${this.type}${this.attributesToString(renderAttributes)}${isRoot ? ' data-reactroot=""' : ''}${selfClose ? '/>' : '>'}`;
         const childrenMarkup = getMarkupForChildren(this.children, staticMarkup);
         const endTag = selfClose ? '' : `</${this.type}>`;
         return startTag + childrenMarkup + endTag;

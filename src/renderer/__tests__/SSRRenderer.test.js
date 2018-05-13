@@ -83,4 +83,56 @@ describe('SSRRenderer', () => {
     it('should not render with event listeners', () => {
         expectMarkupToMatch(<div onClick={() => {}} onclick="alert('Noo');" />);
     });
+    it('should render input with defaultValue correctly', () => {
+        expectMarkupToMatch(<input defaultValue="value" />);
+    });
+    it('should render input with defaultChecked correctly', () => {
+        expectMarkupToMatch(<input defaultChecked={true} />);
+    });
+    it('should render textarea with defaultValue', () => {
+        expectMarkupToMatch(<textarea defaultValue="Some text here" />);
+    });
+    it('should render textarea with defaultValue', () => {
+        expectMarkupToMatch(<textarea defaultValue="Some text here" />);
+    });
+    it('should render select without value', () => {
+        expectMarkupToMatch(<select value="value" />);
+    });
+    it('should render select without defaultValue', () => {
+        expectMarkupToMatch(<select defaultValue="value" />);
+    });
+    it('should render select with correct selected option based on value', () => {
+        expectMarkupToMatch(
+            <select value="Option 2">
+                <option>Option 1</option>
+                <option>Option 2</option>
+            </select>
+        );
+    });
+    it('should render select with correct selected option based on defaultValue', () => {
+        expectMarkupToMatch(
+            <select value="Option 2">
+                <option>Option 1</option>
+                <option>Option 2</option>
+            </select>
+        );
+    });
+    it('should render select with correct selected multiple options', () => {
+        expectMarkupToMatch(
+            <select value={['Option 1', 'Option 3']}>
+                <option>Option 1</option>
+                <option>Option 2</option>
+                <option>Option 3</option>
+            </select>
+        );
+    });
+    it('should render select with correct selected multiple options based on value', () => {
+        expectMarkupToMatch(
+            <select value={['1', '3']}>
+                <option value="1">Option 1</option>
+                <option value="2">Option 2</option>
+                <option value="3">Option 3</option>
+            </select>
+        );
+    });
 });

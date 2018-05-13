@@ -1,18 +1,18 @@
 # Experimental React Serverside Renderer
 
+The official React renderer is a standalone implementation of React that for various (good) reasons does not use the reconciler that the other renderers use. This project ignores those reasons and aims to implement a React serverside renderer on top of the reconciler as an experiment and learning experience.
+
 > Warning: I built this as an experiment and learning experience, code isn't cleaned up, it is missing a lot of validations and error messages and probably has tons of bugs (file issues!). It is not ready for production use and will contain breaking changes in minor releases.
 
 > Warning: This renderer does not aim to be a drop-in replacement for the official React SSR renderer. Also, it might break when React is updated and might not be compatible with upcoming React APIs.
 
-> Note: This renderer calls all the lifecycle-hooks serverside, not just componentWillMount.
+> Note: This renderer calls all the lifecycle-hooks serverside, not just `componentWillMount`.
 
 > Last Note! All that aside, this is really fun stuff to play with if you're into serverside rendering with React, so I encourage you to try it out and play around with it! :)
 
-The official React renderer is a standalone implementation of React that for various (good) reasons does not use the reconciler that the other renderers use. This project ignores those reasons and aims to implement a React serverside renderer on top of the reconciler as an experiment and learning experience.
-
 ## Idea
 
-Using the normal reconciler, lifecycle events that are normally only called on the clientside (such as componentDidMount) will get called on the serverside using this renderer (this means your apps will probably break if you just switch this in). This in combination with a function injected into the React-context called `markSSRDone` let's this renderer support asynchronous server-rendering via `renderToStringAsync`.
+Using the normal reconciler, lifecycle events that are normally only called on the clientside (such as `componentDidMount`) will get called on the serverside using this renderer (this means your apps will probably break if you just switch this in). This in combination with a function injected into the React-context called `markSSRDone` let's this renderer support asynchronous server-rendering via `renderToStringAsync`.
 
 This feature is currently _not_ achieved with Suspense, but instead happens the same way as it does on the client today, via re-rendering changed parts until `markSSRDone` gets called. With some modifications it should be able to support Suspense when it is released properly.
 
@@ -31,7 +31,8 @@ import { renderToString, renderToStaticMarkup } from 'ssr-react-renderer';
 import App from './App';
 
 let markup = renderToString(<App />);
-let markup = renderToStaticMarkup(<App />);
+// OR:
+// let markup = renderToStaticMarkup(<App />);
 
 // Do something with markup
 ```
@@ -56,6 +57,8 @@ There is a caveat with the above. Somewhere in your app, you have to call `markS
 
 #### MarkSSRDone-component
 
+The `<MarkSSRDone />`-component is the fastest way to get started, its only purpose is to call `markSSRDone`.
+
 ```
 import { MarkSSRDone } from 'react-ssr-renderer/react';
 
@@ -68,8 +71,6 @@ export default const ComponentThatWillGetRenderedLast = () => {
     );
 }
 ```
-
-The `<MarkSSRDone />`-component is the fastest way to get started, its only purpose is to call `markSSRDone`.
 
 #### Low-level API
 
@@ -94,11 +95,11 @@ export const MarkSSRDone = () => (
 );
 ```
 
-By using the `<SSRContext.Consumer>` yourself you can get a hold of the `markSSRDone`-function. When you call this, the current tree gets flushed and the rendering-promise resolves. You can provide `markSSRDone` with a cache-parameter that will be available when the promise resolves.
+By using the `<SSRContext.Consumer>` yourself you can get a hold of the `markSSRDone`-function. When you call this, the current tree gets flushed and the rendering-promise resolves. You can provide `markSSRDone` with a cache-parameter that will be available when the promise resolves: `markSSRDone(myCache);`.
 
 #### Fetcher
 
-Most asynchronous work inside the rendering process on the server is usually API-calls to external APIs. If we keep track of the number of active requests, we can safely assume that rendering is done when all of them come back and the component-tree has been updated without triggering any new ones. This is exactly what the `<Fetcher>`-component does.
+Most asynchronous work inside the rendering process on the server are usually API-calls to external APIs. If we keep track of the number of active requests, we can safely assume that rendering is done when all of them come back and the component-tree has been updated without triggering any new ones. This is exactly what the `<Fetcher>`-component does.
 
 It's not enough that we are able to trigger and use these API-calls on the server, we also need to send that data to the client in the html, so it can reuse the data without making new requests. The `<Fetcher>`-component does this for you in combination with `createResource`, modified from Reacts experimental `simple-cache-provider`.
 
@@ -171,7 +172,7 @@ On the server the app gets wrapped in `<SSRContextProvider>` automatically when 
 
 This section could be very long, so I'll just mention a few things:
 
-*   Clean up the code..
+*   Clean up the code (you know, naming, structure, comments and stuff)..
 *   A lot of validation and warnings
 *   A lot of edgecases in the renderer
 *   A lot more testing, both:
@@ -194,3 +195,5 @@ Just to be clear, I view this as an experiment and have no ambition to make it p
 ## Author
 
 Fredrik Höglund ([@EphemeralCircle](https://twitter.com/EphemeralCircle))
+
+> Note: I'll be at React Europe, feel free to get in touch if you want to grab a coffee!

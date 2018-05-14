@@ -27,7 +27,7 @@ No npm-package yet, so if you want to play around with this, either clone it or 
 ### Synchronous rendering
 
 ```
-import { renderToString, renderToStaticMarkup } from 'ssr-react-renderer';
+import { renderToString, renderToStaticMarkup } from 'react-ssr-renderer';
 import App from './App';
 
 let markup = renderToString(<App />);
@@ -43,13 +43,13 @@ Besides watching all those lifecycle-hooks get called on the server this is not 
 
 ```
 // This works with renderToStaticMarkupAsync as well
-import { renderToString } from 'ssr-react-renderer';
-import { SSRContextProvider } from 'ssr-react-renderer/react';
+import { renderToStringAsync } from 'react-ssr-renderer';
+import { SSRContextProvider } from 'react-ssr-renderer/react';
 import App from './App';
 
-renderToStringAsync(<App />, SSRContextProvider).then(({ markup, cache }) => {
+renderToStringAsync(<App />, SSRContextProvider).then(({ html, cache }) => {
     const cacheAsString = cache.serialize();
-    // Do something with markup and cacheAsString
+    // Do something with html and cacheAsString
 });
 ```
 
@@ -77,7 +77,7 @@ export default const ComponentThatWillGetRenderedLast = () => {
 The best way to describe the low-level API is to look at how the `<MarkSSRDone />`-component is implemented:
 
 ```
-import { SSRContext } from 'ssr-react-renderer/react';
+import { SSRContext } from 'react-ssr-renderer/react';
 
 class CallDoneOnMount extends React.Component {
     componentDidMount() {
@@ -143,7 +143,7 @@ If you use this `<Fetcher>` for all your data-loading, `markSSRDone` will get ca
 Lets revisit the asynchronous example from before:
 
 ```
-renderToStringAsync(<App />, SSRContextProvider).then(({ markup, cache }) => {
+renderToStringAsync(<App />, SSRContextProvider).then(({ html, cache }) => {
     const cacheAsString = cache.serialize();
     // It is now up to you to place `cacheAsString` in the html
     // that gets sent down to the client so it can be rehydrated.

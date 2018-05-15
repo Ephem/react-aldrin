@@ -26,7 +26,7 @@ No npm-package yet, so if you want to play around with this, either clone it or 
 
 ### Synchronous rendering
 
-```
+```jsx
 import { renderToString, renderToStaticMarkup } from 'react-ssr-renderer';
 import App from './App';
 
@@ -41,7 +41,7 @@ Besides watching all those lifecycle-hooks get called on the server this is not 
 
 ### Asynchronous rendering
 
-```
+```jsx
 // This works with renderToStaticMarkupAsync as well
 import { renderToStringAsync } from 'react-ssr-renderer';
 import { SSRContextProvider } from 'react-ssr-renderer/react';
@@ -59,7 +59,7 @@ There is a caveat with the above. Somewhere in your app, you have to call `markS
 
 The `<MarkSSRDone />`-component is the fastest way to get started, its only purpose is to call `markSSRDone`.
 
-```
+```jsx
 import { MarkSSRDone } from 'react-ssr-renderer/react';
 
 export default const ComponentThatWillGetRenderedLast = () => {
@@ -76,7 +76,7 @@ export default const ComponentThatWillGetRenderedLast = () => {
 
 The best way to describe the low-level API is to look at how the `<MarkSSRDone />`-component is implemented:
 
-```
+```jsx
 import { SSRContext } from 'react-ssr-renderer/react';
 
 class CallDoneOnMount extends React.Component {
@@ -103,7 +103,7 @@ Most asynchronous work inside the rendering process on the server are usually AP
 
 It's not enough that we are able to trigger and use these API-calls on the server, we also need to send that data to the client in the html, so it can reuse the data without making new requests. The `<Fetcher>`-component does this for you in combination with `createResource`, modified from Reacts experimental `simple-cache-provider`.
 
-```
+```jsx
 import axios from 'axios';
 import { Fetcher, createResource } from 'react-ssr-renderer/react';
 
@@ -142,7 +142,7 @@ If you use this `<Fetcher>` for all your data-loading, `markSSRDone` will get ca
 
 Lets revisit the asynchronous example from before:
 
-```
+```jsx
 renderToStringAsync(<App />, SSRContextProvider).then(({ html, cache }) => {
     const cacheAsString = cache.serialize();
     // It is now up to you to place `cacheAsString` in the html
@@ -152,7 +152,7 @@ renderToStringAsync(<App />, SSRContextProvider).then(({ html, cache }) => {
 
 The `cache` in this example is provided automatically if you use `<Fetcher>`. We need to do one last thing to connect the dots, rehydrating the data on the client:
 
-```
+```jsx
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { SSRContextProvider } from 'react-ssr-renderer/react';

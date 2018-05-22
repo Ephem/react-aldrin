@@ -16,7 +16,8 @@
   "license": "MIT",
   "dependencies": {
     "fbjs": "0.8.16",
-    "react": "16.3.2",
+    "raf": "^3.4.0",
+    "react": "16.4.0-alpha.0911da3",
     "react-reconciler": "0.10.0"
   },
   "devDependencies": {
@@ -31,7 +32,7 @@
     "nodemon": "^1.17.3",
     "prettier": "^1.12.1",
     "prettier-cli": "^0.1.0",
-    "react-dom": "16.3.2",
+    "react-dom": "16.4.0-alpha.0911da3",
     "rimraf": "^2.6.2",
     "rollup": "^0.58.2",
     "rollup-plugin-babel": "^3.0.4",

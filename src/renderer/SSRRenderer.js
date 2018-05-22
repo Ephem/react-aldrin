@@ -28,8 +28,17 @@
  * SOFTWARE.
  */
 
+// For now the react-scheduler uses requestAnimationFrame,
+// so we need to polyfill it
+import 'raf/polyfill';
 import React from 'react';
+// The latest suspense-ready version of the react-reconciler
+// has not been published to npm yet, so for this to work,
+// it needs to be built and npm linked from the React master
 import Reconciler from 'react-reconciler';
+// The scheduler does not exist as a separate npm-package yet,
+// it needs to be built and npm linked from the React master
+import * as ReactScheduler from 'react-scheduler';
 import emptyObject from 'fbjs/lib/emptyObject';
 import omittedCloseTags from './reactUtils/omittedCloseTags';
 import createMarkupForStyles from './reactUtils/createMarkupForStyles';
@@ -282,15 +291,16 @@ const hostConfig = {
     ) {
         return new SSRTreeNode(RAW_TEXT_TYPE, text);
     },
-    scheduleDeferredCallback(callbackID) {},
-    cancelDeferredCallback(callbackID) {},
+    scheduleDeferredCallback: ReactScheduler.scheduleWork,
+    cancelDeferredCallback: ReactScheduler.cancelScheduledWork,
 
     // Commit hooks, useful mainly for react-dom syntethic events
     prepareForCommit() {},
     resetAfterCommit() {},
 
-    now: () => {},
-    useSyncScheduling: true,
+    now: ReactScheduler.now,
+    isPrimaryRenderer: true,
+    //useSyncScheduling: true,
 
     mutation: {
         commitUpdate(
@@ -332,6 +342,65 @@ const hostConfig = {
 };
 
 const SSRRenderer = Reconciler(hostConfig);
+
+function ReactRoot() {
+    const ssrTreeRootNode = new SSRTreeNode(ROOT_TYPE);
+    this._internalTreeRoot = ssrTreeRootNode;
+    const root = SSRRenderer.createContainer(ssrTreeRootNode, true);
+    this._internalRoot = root;
+}
+ReactRoot.prototype.render = function(children) {
+    const root = this._internalRoot;
+    const work = new ReactWork(this._internalTreeRoot);
+    SSRRenderer.updateContainer(children, root, null, work._onCommit);
+    return work;
+};
+ReactRoot.prototype.unmount = function() {
+    const root = this._internalRoot;
+    const work = new ReactWork(this._internalTreeRoot);
+    callback = callback === undefined ? null : callback;
+    SSRRenderer.updateContainer(null, root, null, work._onCommit);
+    return work;
+};
+
+function ReactWork(root) {
+    this._callbacks = null;
+    this._didCommit = false;
+    // TODO: Avoid need to bind by replacing callbacks in the update queue with
+    // list of Work objects.
+    this._onCommit = this._onCommit.bind(this);
+    this._internalRoot = root;
+}
+ReactWork.prototype.then = function(onCommit) {
+    if (this._didCommit) {
+        onCommit({ html: this._internalRoot.toString() });
+        return;
+    }
+    let callbacks = this._callbacks;
+    if (callbacks === null) {
+        callbacks = this._callbacks = [];
+    }
+    callbacks.push(onCommit);
+};
+ReactWork.prototype._onCommit = function() {
+    if (this._didCommit) {
+        return;
+    }
+    this._didCommit = true;
+    const callbacks = this._callbacks;
+    if (callbacks === null) {
+        return;
+    }
+    // TODO: Error handling.
+    for (let i = 0; i < callbacks.length; i++) {
+        const callback = callbacks[i];
+        callback({ html: this._internalRoot.toString() });
+    }
+};
+
+export function createRoot() {
+    return new ReactRoot();
+}
 
 function renderToRoot(element, root) {
     return SSRRenderer.updateContainer(element, root, null);
@@ -388,6 +457,7 @@ export function renderToStaticMarkupAsync(element, SSRContextProvider) {
 }
 
 export default {
+    createRoot,
     renderToString,
     renderToStringAsync,
     renderToStaticMarkup,

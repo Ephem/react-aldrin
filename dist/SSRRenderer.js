@@ -4,10 +4,13 @@ Object.defineProperty(exports, "__esModule", {
     value: true
 });
 exports.SSRTreeNode = exports.RAW_TEXT_TYPE = exports.ROOT_STATIC_TYPE = exports.ROOT_TYPE = undefined;
+exports.createRoot = createRoot;
 exports.renderToString = renderToString;
 exports.renderToStringAsync = renderToStringAsync;
 exports.renderToStaticMarkup = renderToStaticMarkup;
 exports.renderToStaticMarkupAsync = renderToStaticMarkupAsync;
+
+require('raf/polyfill');
 
 var _react = require('react');
 
@@ -16,6 +19,10 @@ var _react2 = _interopRequireDefault(_react);
 var _reactReconciler = require('react-reconciler');
 
 var _reactReconciler2 = _interopRequireDefault(_reactReconciler);
+
+var _reactScheduler = require('react-scheduler');
+
+var ReactScheduler = _interopRequireWildcard(_reactScheduler);
 
 var _emptyObject = require('fbjs/lib/emptyObject');
 
@@ -33,8 +40,13 @@ var _escapeTextForBrowser = require('./reactUtils/escapeTextForBrowser');
 
 var _escapeTextForBrowser2 = _interopRequireDefault(_escapeTextForBrowser);
 
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+// The latest suspense-ready version of the react-reconciler
+// has not been published to npm yet, so for this to work,
+// it needs to be built and npm linked from the React master
 /**
  * Copyright (c) 2018-present, Fredrik Höglund
  *
@@ -65,7 +77,11 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * SOFTWARE.
  */
 
+// For now the react-scheduler uses requestAnimationFrame,
+// so we need to polyfill it
 const ROOT_TYPE = exports.ROOT_TYPE = Symbol('ROOT_TYPE');
+// The scheduler does not exist as a separate npm-package yet,
+// it needs to be built and npm linked from the React master
 const ROOT_STATIC_TYPE = exports.ROOT_STATIC_TYPE = Symbol('ROOT_STATIC_TYPE');
 const RAW_TEXT_TYPE = exports.RAW_TEXT_TYPE = Symbol('RAW_TEXT_TYPE');
 
@@ -267,15 +283,16 @@ const hostConfig = {
     createTextInstance(text, rootContainerInstance, hostContext, internalInstanceHandle) {
         return new SSRTreeNode(RAW_TEXT_TYPE, text);
     },
-    scheduleDeferredCallback(callbackID) {},
-    cancelDeferredCallback(callbackID) {},
+    scheduleDeferredCallback: ReactScheduler.scheduleWork,
+    cancelDeferredCallback: ReactScheduler.cancelScheduledWork,
 
     // Commit hooks, useful mainly for react-dom syntethic events
     prepareForCommit() {},
     resetAfterCommit() {},
 
-    now: () => {},
-    useSyncScheduling: true,
+    now: ReactScheduler.now,
+    isPrimaryRenderer: true,
+    //useSyncScheduling: true,
 
     mutation: {
         commitUpdate(domElement, updatePayload, type, oldProps, newProps, internalInstanceHandle) {},
@@ -310,6 +327,65 @@ const hostConfig = {
 };
 
 const SSRRenderer = (0, _reactReconciler2.default)(hostConfig);
+
+function ReactRoot() {
+    const ssrTreeRootNode = new SSRTreeNode(ROOT_TYPE);
+    this._internalTreeRoot = ssrTreeRootNode;
+    const root = SSRRenderer.createContainer(ssrTreeRootNode, true);
+    this._internalRoot = root;
+}
+ReactRoot.prototype.render = function (children) {
+    const root = this._internalRoot;
+    const work = new ReactWork(this._internalTreeRoot);
+    SSRRenderer.updateContainer(children, root, null, work._onCommit);
+    return work;
+};
+ReactRoot.prototype.unmount = function () {
+    const root = this._internalRoot;
+    const work = new ReactWork(this._internalTreeRoot);
+    callback = callback === undefined ? null : callback;
+    SSRRenderer.updateContainer(null, root, null, work._onCommit);
+    return work;
+};
+
+function ReactWork(root) {
+    this._callbacks = null;
+    this._didCommit = false;
+    // TODO: Avoid need to bind by replacing callbacks in the update queue with
+    // list of Work objects.
+    this._onCommit = this._onCommit.bind(this);
+    this._internalRoot = root;
+}
+ReactWork.prototype.then = function (onCommit) {
+    if (this._didCommit) {
+        onCommit({ html: this._internalRoot.toString() });
+        return;
+    }
+    let callbacks = this._callbacks;
+    if (callbacks === null) {
+        callbacks = this._callbacks = [];
+    }
+    callbacks.push(onCommit);
+};
+ReactWork.prototype._onCommit = function () {
+    if (this._didCommit) {
+        return;
+    }
+    this._didCommit = true;
+    const callbacks = this._callbacks;
+    if (callbacks === null) {
+        return;
+    }
+    // TODO: Error handling.
+    for (let i = 0; i < callbacks.length; i++) {
+        const callback = callbacks[i];
+        callback({ html: this._internalRoot.toString() });
+    }
+};
+
+function createRoot() {
+    return new ReactRoot();
+}
 
 function renderToRoot(element, root) {
     return SSRRenderer.updateContainer(element, root, null);
@@ -364,6 +440,7 @@ function renderToStaticMarkupAsync(element, SSRContextProvider) {
 }
 
 exports.default = {
+    createRoot,
     renderToString,
     renderToStringAsync,
     renderToStaticMarkup,

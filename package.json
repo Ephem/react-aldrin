@@ -5,20 +5,22 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "npm run build:babel && npm run build:rollup",
-    "build:babel": "rimraf dist && babel src/renderer --out-dir dist --ignore __tests__",
+    "build:babel":
+      "rimraf dist && babel src/renderer --out-dir dist --ignore __tests__",
     "build:rollup": "rimraf react.js && rollup -c",
     "build:babel:watch": "npm run build:babel -- --watch",
     "build:rollup:watch": "npm run build:rollup -- --watch",
     "test": "jest",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "test:manual": "babel-node manualtest.js"
   },
   "author": "Fredrik Höglund",
   "license": "MIT",
   "dependencies": {
     "fbjs": "0.8.16",
     "raf": "^3.4.0",
-    "react": "16.4.0-alpha.0911da3",
-    "react-reconciler": "0.10.0"
+    "react": "16.7.0-alpha.2",
+    "react-reconciler": "0.17.0"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",
@@ -32,7 +34,7 @@
     "nodemon": "^1.17.3",
     "prettier": "^1.12.1",
     "prettier-cli": "^0.1.0",
-    "react-dom": "16.4.0-alpha.0911da3",
+    "react-dom": "16.7.0-alpha.2",
     "rimraf": "^2.6.2",
     "rollup": "^0.58.2",
     "rollup-plugin-babel": "^3.0.4",

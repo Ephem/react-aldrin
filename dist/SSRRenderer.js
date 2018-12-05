@@ -20,9 +20,9 @@ var _reactReconciler = require('react-reconciler');
 
 var _reactReconciler2 = _interopRequireDefault(_reactReconciler);
 
-var _reactScheduler = require('react-scheduler');
+var _scheduler = require('scheduler');
 
-var ReactScheduler = _interopRequireWildcard(_reactScheduler);
+var ReactScheduler = _interopRequireWildcard(_scheduler);
 
 var _emptyObject = require('fbjs/lib/emptyObject');
 
@@ -283,47 +283,61 @@ const hostConfig = {
     createTextInstance(text, rootContainerInstance, hostContext, internalInstanceHandle) {
         return new SSRTreeNode(RAW_TEXT_TYPE, text);
     },
-    scheduleDeferredCallback: ReactScheduler.scheduleWork,
-    cancelDeferredCallback: ReactScheduler.cancelScheduledWork,
+    scheduleDeferredCallback: ReactScheduler.unstable_scheduleCallback,
+    cancelDeferredCallback: ReactScheduler.unstable_cancelCallback,
+    shouldYield: ReactScheduler.unstable_shouldYield,
+
+    scheduleTimeout: setTimeout,
+    cancelTimeout: clearTimeout,
+
+    setTimeout: setTimeout,
+    clearTimeout: clearTimeout,
+
+    noTimeout: -1,
 
     // Commit hooks, useful mainly for react-dom syntethic events
     prepareForCommit() {},
     resetAfterCommit() {},
 
-    now: ReactScheduler.now,
+    now: ReactScheduler.unstable_now,
     isPrimaryRenderer: true,
     //useSyncScheduling: true,
 
-    mutation: {
-        commitUpdate(domElement, updatePayload, type, oldProps, newProps, internalInstanceHandle) {},
-        commitMount(domElement, type, newProps, internalInstanceHandle) {},
-        commitTextUpdate(textInstance, oldText, newText) {
-            textInstance.setText(newText);
-        },
-        resetTextContent(textInstance) {
-            textInstance.setText('');
-        },
-        appendChild(parentInstance, child) {
-            parentInstance.appendChild(child);
-        },
+    supportsMutation: true,
+    commitUpdate(domElement, updatePayload, type, oldProps, newProps, internalInstanceHandle) {},
+    commitMount(domElement, type, newProps, internalInstanceHandle) {},
+    commitTextUpdate(textInstance, oldText, newText) {
+        textInstance.setText(newText);
+    },
+    resetTextContent(textInstance) {
+        textInstance.setText('');
+    },
+    appendChild(parentInstance, child) {
+        parentInstance.appendChild(child);
+    },
 
-        // appendChild to root container
-        appendChildToContainer(parentInstance, child) {
-            parentInstance.appendChild(child);
-        },
-        insertBefore(parentInstance, child, beforeChild) {
-            parentInstance.insertBefore(child, beforeChild);
-        },
-        insertInContainerBefore(parentInstance, child, beforeChild) {
-            parentInstance.insertBefore(child, beforeChild);
-        },
-        removeChild(parentInstance, child) {
-            parentInstance.removeChild(child);
-        },
-        removeChildFromContainer(parentInstance, child) {
-            parentInstance.removeChild(child);
-        }
-    }
+    // appendChild to root container
+    appendChildToContainer(parentInstance, child) {
+        parentInstance.appendChild(child);
+    },
+    insertBefore(parentInstance, child, beforeChild) {
+        parentInstance.insertBefore(child, beforeChild);
+    },
+    insertInContainerBefore(parentInstance, child, beforeChild) {
+        parentInstance.insertBefore(child, beforeChild);
+    },
+    removeChild(parentInstance, child) {
+        parentInstance.removeChild(child);
+    },
+    removeChildFromContainer(parentInstance, child) {
+        parentInstance.removeChild(child);
+    },
+
+    // These are todo and not well understood on the server
+    hideInstance() {},
+    hideTextInstance() {},
+    unhideInstance() {},
+    unhideTextInstance() {}
 };
 
 const SSRRenderer = (0, _reactReconciler2.default)(hostConfig);

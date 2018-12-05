@@ -5,8 +5,7 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "npm run build:babel && npm run build:rollup",
-    "build:babel":
-      "rimraf dist && babel src/renderer --out-dir dist --ignore __tests__",
+    "build:babel": "rimraf dist && babel src/renderer --out-dir dist --ignore __tests__",
     "build:rollup": "rimraf react.js && rollup -c",
     "build:babel:watch": "npm run build:babel -- --watch",
     "build:rollup:watch": "npm run build:rollup -- --watch",
@@ -20,7 +19,7 @@
     "fbjs": "0.8.16",
     "raf": "^3.4.0",
     "react": "16.7.0-alpha.2",
-    "react-reconciler": "0.17.0"
+    "react-reconciler": "^0.18.0-alpha.2"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",

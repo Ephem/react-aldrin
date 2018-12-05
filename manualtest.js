@@ -1,4 +1,4 @@
-import React, { Suspense } from 'react';
+import React, { Suspense, useState } from 'react';
 //import ReactDOMServer from 'react-dom/server';
 //import { renderToString, renderToStaticMarkup } from '../SSRRenderer';
 import { createRoot } from './src/renderer/SSRRenderer';
@@ -22,11 +22,14 @@ const Inner = () => {
     return <div>{text}</div>;
 };
 
-const FirstInner = () => (
-    <Suspense ms={5000} fallback={'Loading...'}>
-        <Inner />
-    </Suspense>
-);
+const FirstInner = () => {
+    const [state, setState] = useState('Loading...');
+    return (
+        <Suspense ms={5000} fallback={state}>
+            <Inner />
+        </Suspense>
+    );
+};
 
 const App = () => {
     return (

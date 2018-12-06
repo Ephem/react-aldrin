@@ -1,7 +1,5 @@
 import React, { Suspense, useState } from 'react';
-//import ReactDOMServer from 'react-dom/server';
-//import { renderToString, renderToStaticMarkup } from '../SSRRenderer';
-import { createRoot } from './src/renderer/SSRRenderer';
+import { renderToString } from './src/renderer/SSRRenderer';
 import { createResource, createCache } from './src/react/cache';
 
 const cache = createCache();
@@ -39,11 +37,10 @@ const App = () => {
     );
 };
 
-async function render() {
-    let root = createRoot();
+function render() {
     let startTime = Date.now();
     console.log('Start');
-    await root.render(<App />).then(({ html }) => {
+    renderToString(<App />).then(({ html }) => {
         console.log('Render took', Date.now() - startTime);
         console.log('HTML', html);
     });

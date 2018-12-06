@@ -195,5 +195,3 @@ Just to be clear, I view this as an experiment and have no ambition to make it p
 ## Author
 
 Fredrik Höglund ([@EphemeralCircle](https://twitter.com/EphemeralCircle))
-
-> Note: I'll be at React Europe, feel free to get in touch if you want to grab a coffee!

@@ -28,16 +28,11 @@
  * SOFTWARE.
  */
 
-// For now the react-scheduler uses requestAnimationFrame,
+// For now the scheduler uses requestAnimationFrame,
 // so we need to polyfill it
 import 'raf/polyfill';
 import React from 'react';
-// The latest suspense-ready version of the react-reconciler
-// has not been published to npm yet, so for this to work,
-// it needs to be built and npm linked from the React master
 import Reconciler from 'react-reconciler';
-// The scheduler does not exist as a separate npm-package yet,
-// it needs to be built and npm linked from the React master
 import * as ReactScheduler from 'scheduler';
 import emptyObject from 'fbjs/lib/emptyObject';
 import omittedCloseTags from './reactUtils/omittedCloseTags';
@@ -357,15 +352,19 @@ const hostConfig = {
 
 const SSRRenderer = Reconciler(hostConfig);
 
-function ReactRoot() {
-    const ssrTreeRootNode = new SSRTreeNode(ROOT_TYPE);
+function ReactRoot({ staticMarkup = false } = {}) {
+    const rootType = staticMarkup ? ROOT_STATIC_TYPE : ROOT_TYPE;
+    const ssrTreeRootNode = new SSRTreeNode(rootType);
     this._internalTreeRoot = ssrTreeRootNode;
     const root = SSRRenderer.createContainer(ssrTreeRootNode, true);
     this._internalRoot = root;
+    this._staticMarkup = staticMarkup;
 }
 ReactRoot.prototype.render = function(children) {
     const root = this._internalRoot;
-    const work = new ReactWork(this._internalTreeRoot);
+    const work = new ReactWork(this._internalTreeRoot, {
+        staticMarkup: this._staticMarkup
+    });
     SSRRenderer.updateContainer(children, root, null, work._onCommit);
     return work;
 };
@@ -377,17 +376,18 @@ ReactRoot.prototype.unmount = function() {
     return work;
 };
 
-function ReactWork(root) {
+function ReactWork(root, { staticMarkup = false } = {}) {
     this._callbacks = null;
     this._didCommit = false;
     // TODO: Avoid need to bind by replacing callbacks in the update queue with
     // list of Work objects.
     this._onCommit = this._onCommit.bind(this);
     this._internalRoot = root;
+    this._staticMarkup = staticMarkup;
 }
 ReactWork.prototype.then = function(onCommit) {
     if (this._didCommit) {
-        onCommit({ html: this._internalRoot.toString() });
+        onCommit({ html: this._internalRoot.toString(this._staticMarkup) });
         return;
     }
     let callbacks = this._callbacks;
@@ -408,26 +408,24 @@ ReactWork.prototype._onCommit = function() {
     // TODO: Error handling.
     for (let i = 0; i < callbacks.length; i++) {
         const callback = callbacks[i];
-        callback({ html: this._internalRoot.toString() });
+        callback({
+            html: this._internalRoot.toString(this._staticMarkup)
+        });
     }
 };
 
-export function createRoot() {
-    return new ReactRoot();
+function createRoot(options) {
+    return new ReactRoot(options);
 }
 
-function renderToRoot(element, root) {
-    return SSRRenderer.updateContainer(element, root, null);
-}
-
-export function renderToString(element) {
-    let ssrTreeRootNode = new SSRTreeNode(ROOT_TYPE);
-    let root = SSRRenderer.createContainer(ssrTreeRootNode);
-    renderToRoot(element, root);
-    return ssrTreeRootNode.toString();
-}
-
-export function renderToStringAsync(element, SSRContextProvider) {
+export function renderToString(element, SSRContextProvider) {
+    return new Promise((resolve, reject) => {
+        const root = createRoot();
+        return root.render(element).then((...args) => {
+            resolve(...args);
+        });
+    });
+    /*
     return new Promise((resolve, reject) => {
         let ssrTreeRootNode = new SSRTreeNode(ROOT_TYPE);
         let root = SSRRenderer.createContainer(ssrTreeRootNode);
@@ -443,16 +441,17 @@ export function renderToStringAsync(element, SSRContextProvider) {
             root
         );
     });
+    */
 }
 
-export function renderToStaticMarkup(element) {
-    let ssrTreeRootNode = new SSRTreeNode(ROOT_STATIC_TYPE);
-    let root = SSRRenderer.createContainer(ssrTreeRootNode);
-    renderToRoot(element, root);
-    return ssrTreeRootNode.toString(true);
-}
-
-export function renderToStaticMarkupAsync(element, SSRContextProvider) {
+export function renderToStaticMarkup(element, SSRContextProvider) {
+    return new Promise((resolve, reject) => {
+        const root = createRoot({ staticMarkup: true });
+        return root.render(element).then((...args) => {
+            resolve(...args);
+        });
+    });
+    /*
     return new Promise((resolve, reject) => {
         let ssrTreeRootNode = new SSRTreeNode(ROOT_STATIC_TYPE);
         let root = SSRRenderer.createContainer(ssrTreeRootNode);
@@ -468,12 +467,10 @@ export function renderToStaticMarkupAsync(element, SSRContextProvider) {
             root
         );
     });
+    */
 }
 
 export default {
-    createRoot,
     renderToString,
-    renderToStringAsync,
-    renderToStaticMarkup,
-    renderToStaticMarkupAsync
+    renderToStaticMarkup
 };

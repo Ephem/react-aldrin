@@ -18,7 +18,7 @@ const Inner = () => {
 const FirstInner = () => {
     const [state, setState] = useState('Loading...');
     return (
-        <Suspense maxDuration={1000} fallback={state}>
+        <Suspense maxDuration={5000} fallback={state}>
             <Inner />
         </Suspense>
     );

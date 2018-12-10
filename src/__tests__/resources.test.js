@@ -9,17 +9,12 @@ const getResource = (timeout = 10, value = 'Async resource') => {
     let calls = { count: 0 };
     return {
         calls,
-        resource: createResource(
-            'test-resource',
-            () => {
-                calls.count += 1;
-                return new Promise(resolve => {
-                    setTimeout(() => resolve(value), timeout);
-                });
-            },
-            undefined,
-            true
-        )
+        resource: createResource('test-resource', () => {
+            calls.count += 1;
+            return new Promise(resolve => {
+                setTimeout(() => resolve(value), timeout);
+            });
+        })
     };
 };
 

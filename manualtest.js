@@ -4,16 +4,11 @@ import { createResource, createCache } from './src/react/cache';
 
 const cache = createCache();
 
-const mockResource = createResource(
-    'mock',
-    () => {
-        return new Promise(resolve => {
-            setTimeout(() => resolve('Text2'), 3000);
-        });
-    },
-    undefined,
-    true
-);
+const mockResource = createResource('mock', () => {
+    return new Promise(resolve => {
+        setTimeout(() => resolve('Text2'), 3000);
+    });
+});
 
 const Inner = () => {
     const text = mockResource.read(cache);

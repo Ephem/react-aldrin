@@ -125,23 +125,17 @@ export function createCache(invalidator) {
                     throw error;
             }
         },
-        read(resource, key, miss, missArg, enableSuspense) {
+        read(resource, key, miss, missArg) {
             const record = getRecord(resource.name, key);
             switch (record.status) {
                 case Empty:
                     // Load the requested resource.
                     const suspender = miss(missArg);
                     load(record, suspender);
-                    if (enableSuspense) {
-                        throw suspender;
-                    }
-                    return suspender;
+                    throw suspender;
                 case Pending:
                     // There's already a pending request.
-                    if (enableSuspense) {
-                        throw record.suspender;
-                    }
-                    return record.suspender;
+                    throw record.suspender;
                 case Resolved:
                     return record.value;
                 case Rejected:
@@ -168,12 +162,7 @@ export function createCache(invalidator) {
     return cache;
 }
 
-export function createResource(
-    resourceName,
-    loadResource,
-    hash,
-    enableSuspense
-) {
+export function createResource(resourceName, loadResource, hash) {
     const resource = {
         name: resourceName,
         get(cache, key = 'NO_KEY') {
@@ -185,22 +174,10 @@ export function createResource(
         },
         read(cache, key = 'NO_KEY') {
             if (hash === undefined) {
-                return cache.read(
-                    resource,
-                    key,
-                    loadResource,
-                    key,
-                    enableSuspense
-                );
+                return cache.read(resource, key, loadResource, key);
             }
             const hashedKey = hash(key);
-            return cache.read(
-                resource,
-                hashedKey,
-                loadResource,
-                key,
-                enableSuspense
-            );
+            return cache.read(resource, hashedKey, loadResource, key);
         },
         preload(cache, key = 'NO_KEY') {
             if (hash === undefined) {

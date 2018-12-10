@@ -28,10 +28,6 @@
  * SOFTWARE.
  */
 
-import React from 'react';
-
-function noop() {}
-
 const Empty = 0;
 const Pending = 1;
 const Resolved = 2;

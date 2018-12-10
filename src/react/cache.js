@@ -176,14 +176,14 @@ export function createResource(
 ) {
     const resource = {
         name: resourceName,
-        get(cache, key) {
+        get(cache, key = 'NO_KEY') {
             if (hash === undefined) {
                 return cache.get(resource, key, loadResource, key);
             }
             const hashedKey = hash(key);
             return cache.get(resource, hashedKey, loadResource, key);
         },
-        read(cache, key) {
+        read(cache, key = 'NO_KEY') {
             if (hash === undefined) {
                 return cache.read(
                     resource,
@@ -198,11 +198,11 @@ export function createResource(
                 resource,
                 hashedKey,
                 loadResource,
-                ke,
-                enableSuspensey
+                key,
+                enableSuspense
             );
         },
-        preload(cache, key) {
+        preload(cache, key = 'NO_KEY') {
             if (hash === undefined) {
                 cache.preload(resource, key, loadResource, key);
                 return;

@@ -1,4 +1,5 @@
-import React, { Suspense, forwardRef } from 'react';
+import React, { forwardRef } from 'react';
+import { render as testRender } from 'react-testing-library';
 
 import {
     useState,
@@ -13,6 +14,13 @@ import {
 } from '../react/';
 import { renderToString } from '../renderer/SSRRenderer';
 
+function render(...args) {
+    delete process.release.name;
+    const res = testRender(...args);
+    process.release.name = 'node';
+    return res;
+}
+
 describe('SSRRenderer', () => {
     describe('basic hooks', () => {
         it('renders useState', async () => {
@@ -20,23 +28,32 @@ describe('SSRRenderer', () => {
                 const [state, setState] = useState(initialState);
                 return <div>{state}</div>;
             }
-            const { html } = await renderToString(
-                <App initialState="It works!" />
-            );
+            const app = <App initialState="It works!" />;
+            const { html } = await renderToString(app);
             expect(html).toBe('<div data-reactroot="">It works!</div>');
+
+            // Browser test
+            const { getByText } = render(app);
+            getByText('It works!');
         });
-        it('useEffect should be noop', async () => {
-            let called = false;
-            const setCalled = () => (called = true);
+        it('useEffect should be noop on server', async () => {
+            const setCalled = jest.fn();
             function App() {
                 useEffect(() => {
                     setCalled();
                 });
                 return <div>It works!</div>;
             }
+            const app = <App />;
             const { html } = await renderToString(<App />);
             expect(html).toBe('<div data-reactroot="">It works!</div>');
-            expect(called).toBe(false);
+            expect(setCalled).not.toBeCalled();
+
+            // Browser test
+            const { getByText, rerender } = render(app);
+            getByText('It works!');
+            rerender(app);
+            expect(setCalled).toBeCalled();
         });
         it('useContext', async () => {
             const Context = React.createContext('Default');
@@ -44,12 +61,20 @@ describe('SSRRenderer', () => {
                 const contextValue = useContext(Context);
                 return <div>{contextValue}</div>;
             }
-            const { html } = await renderToString(
+            const app = (
                 <Context.Provider value="Correct">
                     <App />
                 </Context.Provider>
             );
+            const { html } = await renderToString(app);
             expect(html).toBe('<div data-reactroot="">Correct</div>');
+
+            // Browser test, mock console.error to avoid error about using Context in two renderers
+            jest.spyOn(console, 'error');
+            console.error.mockImplementation(() => {});
+            const { getByText } = render(app);
+            console.error.mockRestore();
+            getByText('Correct');
         });
     });
 
@@ -66,16 +91,18 @@ describe('SSRRenderer', () => {
                 );
                 return <div>{state}</div>;
             }
-            const { html } = await renderToString(
-                <App initialState="It works!" />
-            );
+            const app = <App initialState="It works!" />;
+            const { html } = await renderToString(app);
             expect(html).toBe(
                 '<div data-reactroot="">This is what should show</div>'
             );
+
+            // Browser test
+            const { getByText } = render(app);
+            getByText('This is what should show');
         });
-        it('useCallback should return the function sent in but not call it', async () => {
-            let called = false;
-            const setCalled = () => (called = true);
+        it('useCallback should return the function sent in on server', async () => {
+            const setCalled = jest.fn();
             function App() {
                 const cb = useCallback(setCalled);
                 expect(cb).toBe(setCalled);
@@ -83,7 +110,7 @@ describe('SSRRenderer', () => {
             }
             const { html } = await renderToString(<App />);
             expect(html).toBe('<div data-reactroot="">It works!</div>');
-            expect(called).toBe(false);
+            expect(setCalled).not.toBeCalled();
         });
         it('useMemo should work', async () => {
             const add = jest.fn((a, b) => a + b);
@@ -102,7 +129,12 @@ describe('SSRRenderer', () => {
             }
             const { html } = await renderToString(<App />);
             expect(html).toBe('<div data-reactroot="">3</div>');
-            expect(add.mock.calls.length).toBe(1);
+            expect(add).toHaveBeenCalledTimes(1);
+
+            // Browser test
+            const { getByText } = render(<App />);
+            getByText('3');
+            expect(add).toHaveBeenCalledTimes(2);
         });
         it('useRef should work', async () => {
             function App() {
@@ -118,13 +150,13 @@ describe('SSRRenderer', () => {
             }
             const { html } = await renderToString(<App />);
             expect(html).toBe('<div data-reactroot="">1</div>');
+
+            // Browser test
+            const { getByText } = render(<App />);
+            getByText('1');
         });
-        it('useImperativeMethods should be noop', async () => {
-            let called = false;
-            const setCalled = () => {
-                called = true;
-                return { focus: () => {} };
-            };
+        it('useImperativeMethods should be noop on the server', async () => {
+            const setCalled = jest.fn(() => ({ focus: () => {} }));
             function App() {
                 return (
                     <div>
@@ -142,44 +174,41 @@ describe('SSRRenderer', () => {
             expect(html).toBe(
                 '<div data-reactroot=""><div>It works!</div></div>'
             );
-            expect(called).toBe(false);
+            expect(setCalled).not.toBeCalled();
+
+            // Browser test
+            const { getByText } = render(<App />);
+            getByText('It works!');
+            expect(setCalled).toHaveBeenCalledTimes(1);
         });
-        it('useLayoutEffect should warn in dev and be noop', async () => {
+        it('useLayoutEffect should warn in dev and be noop on server', async () => {
             const oldEnv = process.env.NODE_ENV;
             process.env.NODE_ENV = 'development';
             jest.spyOn(console, 'warn');
             console.warn.mockImplementation(() => {});
-            let called = false;
-            const setCalled = () => (called = true);
+            const setCalled = jest.fn();
             function App() {
                 useLayoutEffect(() => {
                     setCalled();
                 });
                 return <div>It works!</div>;
             }
-            const { html } = await renderToString(<App />);
+            const app = <App />;
+            const { html } = await renderToString(app);
             expect(html).toBe('<div data-reactroot="">It works!</div>');
             process.env.NODE_ENV = oldEnv;
-            await renderToString(<App />);
-            expect(called).toBe(false);
-            expect(console.warn.mock.calls.length).toBe(1);
+            await renderToString(app);
+            expect(setCalled).not.toBeCalled();
+            expect(console.warn).toHaveBeenCalledTimes(1);
+
+            // Browser test
+            const { getByText, rerender } = render(app);
+            getByText('It works!');
+            rerender(app);
+            expect(setCalled).toHaveBeenCalledTimes(1);
+            expect(console.warn).toHaveBeenCalledTimes(1);
+
             console.warn.mockRestore();
         });
-    });
-});
-
-describe('Hooks in the browser', () => {
-    describe('basic', () => {
-        it('useState');
-        it('useEffect');
-        it('useContext');
-    });
-    describe('additional', () => {
-        it('useReducer');
-        it('useCallback');
-        it('useMemo');
-        it('useRef');
-        it('useImperativeMethods');
-        it('useLayoutEffect');
     });
 });

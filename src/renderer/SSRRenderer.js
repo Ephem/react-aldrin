@@ -418,7 +418,7 @@ function createRoot(options) {
     return new ReactRoot(options);
 }
 
-export function renderToString(element, SSRContextProvider) {
+export function renderToString(element) {
     return new Promise((resolve, reject) => {
         const root = createRoot();
         return root.render(element).then((...args) => {
@@ -444,7 +444,7 @@ export function renderToString(element, SSRContextProvider) {
     */
 }
 
-export function renderToStaticMarkup(element, SSRContextProvider) {
+export function renderToStaticMarkup(element) {
     return new Promise((resolve, reject) => {
         const root = createRoot({ staticMarkup: true });
         return root.render(element).then((...args) => {

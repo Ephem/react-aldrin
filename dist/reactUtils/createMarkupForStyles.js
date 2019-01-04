@@ -13,7 +13,7 @@ var _hyphenateStyleName = require('fbjs/lib/hyphenateStyleName');
 
 var _hyphenateStyleName2 = _interopRequireDefault(_hyphenateStyleName);
 
-var _dangerousStyleValue = require('./dangerousStyleValue');
+var _dangerousStyleValue = require('../react-dom/src/shared/dangerousStyleValue');
 
 var _dangerousStyleValue2 = _interopRequireDefault(_dangerousStyleValue);
 
@@ -23,13 +23,13 @@ const processStyleName = (0, _memoizeStringOnly2.default)(function (styleName) {
     return (0, _hyphenateStyleName2.default)(styleName);
 }); /**
      * Copyright (c) 2018-present, Fredrik Höglund
-     * 
+     *
      * This source code is licensed under the MIT license found in the
      * LICENSE file in the root directory of this source tree.
-     * 
+     *
      * This file is very heavily based on code from the React-project,
      * used under the MIT License below:
-     * 
+     *
      * Copyright (c) 2013-2018, Facebook, Inc.
      *
      * Permission is hereby granted, free of charge, to any person obtaining a copy

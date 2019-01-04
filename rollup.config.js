@@ -14,6 +14,7 @@ export default {
             'react-dom': 'ReactDOM'
         }
     },
+    external: ['react', 'react-dom'],
     plugins: [
         resolve({
             customResolveOptions: {
@@ -32,9 +33,12 @@ export default {
                 ],
                 'react'
             ],
-            plugins: ['transform-class-properties', 'external-helpers']
+            plugins: [
+                'transform-class-properties',
+                'external-helpers',
+                'transform-flow-strip-types'
+            ]
         }),
         uglify()
-    ],
-    external: ['react']
+    ]
 };

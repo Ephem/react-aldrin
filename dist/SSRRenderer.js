@@ -25,55 +25,62 @@ var _emptyObject = require('fbjs/lib/emptyObject');
 
 var _emptyObject2 = _interopRequireDefault(_emptyObject);
 
-var _omittedCloseTags = require('./reactUtils/omittedCloseTags');
+var _omittedCloseTags = require('./react-dom/src/shared/omittedCloseTags');
 
 var _omittedCloseTags2 = _interopRequireDefault(_omittedCloseTags);
+
+var _isCustomComponent = require('./react-dom/src/shared/isCustomComponent');
+
+var _isCustomComponent2 = _interopRequireDefault(_isCustomComponent);
+
+var _escapeTextForBrowser = require('./react-dom/src/server/escapeTextForBrowser');
+
+var _escapeTextForBrowser2 = _interopRequireDefault(_escapeTextForBrowser);
+
+var _DOMMarkupOperations = require('./react-dom/src/server/DOMMarkupOperations');
 
 var _createMarkupForStyles = require('./reactUtils/createMarkupForStyles');
 
 var _createMarkupForStyles2 = _interopRequireDefault(_createMarkupForStyles);
 
-var _escapeTextForBrowser = require('./reactUtils/escapeTextForBrowser');
-
-var _escapeTextForBrowser2 = _interopRequireDefault(_escapeTextForBrowser);
+var _react3 = require('../react');
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-/**
- * Copyright (c) 2018-present, Fredrik Höglund
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- *
- * Some of the code in this file is copied or adapted from the React project,
- * used under the license below:
- *
- * Copyright (c) 2013-2018, Facebook, Inc.
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
-
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
-
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- */
+const ROOT_TYPE = exports.ROOT_TYPE = Symbol('ROOT_TYPE'); /**
+                                                            * Copyright (c) 2018-present, Fredrik Höglund
+                                                            *
+                                                            * This source code is licensed under the MIT license found in the
+                                                            * LICENSE file in the root directory of this source tree.
+                                                            *
+                                                            * Some of the code in this file is copied or adapted from the React project,
+                                                            * used under the license below:
+                                                            *
+                                                            * Copyright (c) 2013-2018, Facebook, Inc.
+                                                            *
+                                                            * Permission is hereby granted, free of charge, to any person obtaining a copy
+                                                            * of this software and associated documentation files (the "Software"), to deal
+                                                            * in the Software without restriction, including without limitation the rights
+                                                            * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+                                                            * copies of the Software, and to permit persons to whom the Software is
+                                                            * furnished to do so, subject to the following conditions:
+                                                           
+                                                            * The above copyright notice and this permission notice shall be included in all
+                                                            * copies or substantial portions of the Software.
+                                                           
+                                                            * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+                                                            * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+                                                            * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+                                                            * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+                                                            * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+                                                            * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+                                                            * SOFTWARE.
+                                                            */
 
 // For now the scheduler uses requestAnimationFrame,
 // so we need to polyfill it
-const ROOT_TYPE = exports.ROOT_TYPE = Symbol('ROOT_TYPE');
 const ROOT_STATIC_TYPE = exports.ROOT_STATIC_TYPE = Symbol('ROOT_STATIC_TYPE');
 const RAW_TEXT_TYPE = exports.RAW_TEXT_TYPE = Symbol('RAW_TEXT_TYPE');
 
@@ -89,6 +96,13 @@ function getMarkupForChildren(children, staticMarkup, selectedValue) {
     }
     return childrenMarkup.join('');
 }
+
+const RESERVED_PROPS = {
+    children: null,
+    dangerouslySetInnerHTML: null,
+    suppressContentEditableWarning: null,
+    suppressHydrationWarning: null
+};
 
 class SSRTreeNode {
     constructor(type, text) {
@@ -115,44 +129,37 @@ class SSRTreeNode {
         this.attributes[name] = value;
     }
     attributesToString(attributes) {
-        const attributesArray = [];
-        var _iteratorNormalCompletion = true;
-        var _didIteratorError = false;
-        var _iteratorError = undefined;
-
-        try {
-            for (var _iterator = Object.keys(attributes)[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-                const key = _step.value;
-
-                if (attributes.hasOwnProperty(key) && attributes[key] != null && attributes[key] !== false) {
-                    let value = attributes[key];
-                    if (value === true) {
-                        value = '';
-                    }
-                    attributesArray.push(key + '="' + value + '"');
-                }
+        let ret = '';
+        for (const key in attributes) {
+            if (!attributes.hasOwnProperty(key)) {
+                continue;
             }
-        } catch (err) {
-            _didIteratorError = true;
-            _iteratorError = err;
-        } finally {
-            try {
-                if (!_iteratorNormalCompletion && _iterator.return) {
-                    _iterator.return();
+            let value = attributes[key];
+            if (value == null) {
+                continue;
+            }
+            if (key === 'style') {
+                value = (0, _createMarkupForStyles2.default)(value);
+            }
+            let markup = null;
+            if ((0, _isCustomComponent2.default)(this.type.toLowerCase(), attributes)) {
+                if (!RESERVED_PROPS.hasOwnProperty(key)) {
+                    markup = (0, _DOMMarkupOperations.createMarkupForCustomAttribute)(key, value);
                 }
-            } finally {
-                if (_didIteratorError) {
-                    throw _iteratorError;
-                }
+            } else {
+                markup = (0, _DOMMarkupOperations.createMarkupForProperty)(key, value);
+            }
+            if (markup) {
+                ret += ' ' + markup;
             }
         }
-
-        return attributesArray.length ? ' ' + attributesArray.join(' ') : '';
+        return ret;
     }
     toString(staticMarkup, previousWasText, isRoot, selectedValue) {
         let renderAttributes = this.attributes;
         let selectSelectedValue;
         let childrenMarkup;
+        const rawInnerHtml = this.attributes.dangerouslySetInnerHTML && this.attributes.dangerouslySetInnerHTML.__html;
         if (this.type === ROOT_STATIC_TYPE) {
             let markup = getMarkupForChildren(this.children, staticMarkup);
             return markup;
@@ -214,7 +221,7 @@ class SSRTreeNode {
 
         const selfClose = !this.children.length && _omittedCloseTags2.default[this.type];
         const startTag = `<${this.type}${this.attributesToString(renderAttributes)}${isRoot ? ' data-reactroot=""' : ''}${selfClose ? '/>' : '>'}`;
-        childrenMarkup = childrenMarkup || getMarkupForChildren(this.children, staticMarkup, selectSelectedValue);
+        childrenMarkup = rawInnerHtml || childrenMarkup || getMarkupForChildren(this.children, staticMarkup, selectSelectedValue);
         const endTag = selfClose ? '' : `</${this.type}>`;
         return startTag + childrenMarkup + endTag;
     }
@@ -256,8 +263,6 @@ const hostConfig = {
                 }
             } else if (propName === 'className') {
                 element.setAttribute('class', propValue);
-            } else if (propName === 'style') {
-                element.setAttribute(propName, (0, _createMarkupForStyles2.default)(propValue));
             } else if (!isEventListener(propName)) {
                 element.setAttribute(propName, propValue);
             }
@@ -369,7 +374,7 @@ function ReactWork(root, { staticMarkup = false } = {}) {
 }
 ReactWork.prototype.then = function (onCommit) {
     if (this._didCommit) {
-        onCommit({ html: this._internalRoot.toString(this._staticMarkup) });
+        onCommit(this._internalRoot.toString(this._staticMarkup));
         return;
     }
     let callbacks = this._callbacks;
@@ -390,9 +395,7 @@ ReactWork.prototype._onCommit = function () {
     // TODO: Error handling.
     for (let i = 0; i < callbacks.length; i++) {
         const callback = callbacks[i];
-        callback({
-            html: this._internalRoot.toString(this._staticMarkup)
-        });
+        callback(this._internalRoot.toString(this._staticMarkup));
     }
 };
 
@@ -400,52 +403,35 @@ function createRoot(options) {
     return new ReactRoot(options);
 }
 
-function renderToString(element, SSRContextProvider) {
+function renderToString(element) {
     return new Promise((resolve, reject) => {
         const root = createRoot();
-        return root.render(element).then((...args) => {
-            resolve(...args);
+        const cache = (0, _react3.createCache)();
+        return root.render(_react2.default.createElement(
+            _react3.PrimaryCacheContext.Provider,
+            { value: cache },
+            element
+        )).then(markup => {
+            const cacheData = cache.serialize();
+            const innerHTML = `window.__REACT_CACHE_DATA__ = ${cacheData};`;
+            const markupWithCacheData = `${markup}<script id="react_cache_data_container">${innerHTML}</script>`;
+            resolve({ markup, markupWithCacheData, cache });
         });
     });
-    /*
-    return new Promise((resolve, reject) => {
-        let ssrTreeRootNode = new SSRTreeNode(ROOT_TYPE);
-        let root = SSRRenderer.createContainer(ssrTreeRootNode);
-         function markSSRDone(cache) {
-            resolve({ html: ssrTreeRootNode.toString(), cache });
-        }
-         renderToRoot(
-            <SSRContextProvider markSSRDone={markSSRDone}>
-                {element}
-            </SSRContextProvider>,
-            root
-        );
-    });
-    */
 }
 
-function renderToStaticMarkup(element, SSRContextProvider) {
+function renderToStaticMarkup(element) {
     return new Promise((resolve, reject) => {
         const root = createRoot({ staticMarkup: true });
-        return root.render(element).then((...args) => {
-            resolve(...args);
+        const cache = (0, _react3.createCache)();
+        return root.render(_react2.default.createElement(
+            _react3.PrimaryCacheContext.Provider,
+            { value: cache },
+            element
+        )).then(markup => {
+            resolve({ markup, cache });
         });
     });
-    /*
-    return new Promise((resolve, reject) => {
-        let ssrTreeRootNode = new SSRTreeNode(ROOT_STATIC_TYPE);
-        let root = SSRRenderer.createContainer(ssrTreeRootNode);
-         function markSSRDone(cache) {
-            resolve({ html: ssrTreeRootNode.toString(true), cache });
-        }
-         renderToRoot(
-            <SSRContextProvider markSSRDone={markSSRDone}>
-                {element}
-            </SSRContextProvider>,
-            root
-        );
-    });
-    */
 }
 
 exports.default = {

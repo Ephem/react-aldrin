@@ -1,43 +1,30 @@
 import React, { Suspense } from 'react';
-import ReactDOM from 'react-dom';
+import { hydrate } from '../../../src/react';
 
-import {
-    createResource,
-    createCache,
-    useContext,
-    PrimaryCacheContext
-} from '../../../src/react';
+import { createResource, useReadResource } from '../../../src/react';
 
-const catFacts = createResource('catFacts', () =>
-    fetch('https://cat-fact.herokuapp.com/facts/random').then(res => res.json())
+const colorResource = createResource('colorResource', colorId =>
+    fetch(`http://localhost:3000/api/colors/${colorId}`).then(res => res.text())
 );
 
-function CatFact() {
-    const cache = useContext(PrimaryCacheContext);
-    const fact = catFacts.read(cache);
+function Color({ colorId }) {
+    const color = useReadResource(colorResource, colorId);
 
-    return <p>Random cat fact: {fact.text}</p>;
+    return <p>This is a color: {color}</p>;
 }
 
 function App() {
     return (
-        <div>
-            <Suspense fallback={'Loading...'}>
-                <CatFact />
-            </Suspense>
-        </div>
+        <Suspense fallback={'Loading...'}>
+            <Color colorId="1" />
+            <Color colorId="2" />
+            <Color colorId="3" />
+        </Suspense>
     );
 }
 
 if (typeof window !== 'undefined') {
-    const cache = createCache(window.CACHE_DATA);
-
-    ReactDOM.hydrate(
-        <PrimaryCacheContext.Provider value={cache}>
-            <App />
-        </PrimaryCacheContext.Provider>,
-        document.getElementById('react-app')
-    );
+    hydrate(<App />, document.getElementById('react-app'));
 }
 
 module.exports = {

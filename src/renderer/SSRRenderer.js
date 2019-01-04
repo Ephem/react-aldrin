@@ -444,7 +444,10 @@ export function renderToString(element) {
                 </PrimaryCacheContext.Provider>
             )
             .then(markup => {
-                resolve({ markup, cache });
+                const cacheData = cache.serialize();
+                const innerHTML = `window.__REACT_CACHE_DATA__ = ${cacheData};`;
+                const markupWithCacheData = `${markup}<script id="react_cache_data_container">${innerHTML}</script>`;
+                resolve({ markup, markupWithCacheData, cache });
             });
     });
 }

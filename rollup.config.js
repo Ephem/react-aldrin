@@ -10,7 +10,8 @@ export default {
         format: 'umd',
         name: 'SSRRenderer',
         globals: {
-            react: 'React'
+            react: 'React',
+            'react-dom': 'ReactDOM'
         }
     },
     plugins: [

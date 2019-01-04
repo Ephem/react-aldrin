@@ -11,7 +11,7 @@ import { App } from './src';
 const app = express();
 const port = 3000;
 
-const createHtml = (markup, cache) => `
+const createHtml = markup => `
 <!DOCTYPE html>
 <html lang="en">
 
@@ -23,7 +23,6 @@ const createHtml = (markup, cache) => `
 
 <body>
   <div id="react-app">${markup}</div>
-  <script>window.CACHE_DATA = ${cache}</script>
   <script src="main.js"></script>
 </body>
 
@@ -32,9 +31,17 @@ const createHtml = (markup, cache) => `
 
 app.use(express.static(path.join(__dirname, 'dist')));
 
+const colors = { 1: 'Red', 2: 'Green', 3: 'Blue' };
+
+app.get('/api/colors/:colorId', (req, res) => {
+    res.send(colors[req.params.colorId]);
+});
+
 app.get('/', async (req, res) => {
-    const { markup, cache } = await renderToString(<App />);
-    res.send(createHtml(markup, cache.serialize()));
+    const { markup, markupWithCacheData, cache } = await renderToString(
+        <App />
+    );
+    res.send(createHtml(markupWithCacheData));
 });
 
 app.listen(port, () =>

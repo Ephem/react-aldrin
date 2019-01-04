@@ -2,8 +2,11 @@ import {
     useEffect as reactUseEffect,
     useLayoutEffect as reactUseLayoutEffect,
     useImperativeMethods as reactUseImperativeMethods,
-    useCallback as reactUseCallback
+    useCallback as reactUseCallback,
+    useContext
 } from 'react';
+
+import { PrimaryCacheContext } from './cache';
 
 export { useState } from 'react';
 export { useReducer } from 'react';
@@ -57,4 +60,10 @@ export function useCallback(cb, ...rest) {
         return cb;
     }
     return reactUseCallback(cb, ...rest);
+}
+
+// Custom hook
+export function useReadResource(resource, key) {
+    const cache = useContext(PrimaryCacheContext);
+    return resource.read(cache, key);
 }

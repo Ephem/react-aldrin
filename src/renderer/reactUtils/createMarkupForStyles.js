@@ -1,12 +1,12 @@
 /**
  * Copyright (c) 2018-present, Fredrik Höglund
- * 
+ *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
- * 
+ *
  * This file is very heavily based on code from the React-project,
  * used under the MIT License below:
- * 
+ *
  * Copyright (c) 2013-2018, Facebook, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -30,7 +30,7 @@
 
 import memoizeStringOnly from 'fbjs/lib/memoizeStringOnly';
 import hyphenateStyleName from 'fbjs/lib/hyphenateStyleName';
-import dangerousStyleValue from './dangerousStyleValue';
+import dangerousStyleValue from '../react-dom/src/shared/dangerousStyleValue';
 
 const processStyleName = memoizeStringOnly(function(styleName) {
     return hyphenateStyleName(styleName);

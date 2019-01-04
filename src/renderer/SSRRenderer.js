@@ -35,9 +35,16 @@ import React from 'react';
 import Reconciler from 'react-reconciler';
 import * as ReactScheduler from 'scheduler';
 import emptyObject from 'fbjs/lib/emptyObject';
-import omittedCloseTags from './reactUtils/omittedCloseTags';
+
+import omittedCloseTags from './react-dom/src/shared/omittedCloseTags';
+import isCustomComponent from './react-dom/src/shared/isCustomComponent';
+import escapeTextForBrowser from './react-dom/src/server/escapeTextForBrowser';
+import {
+    createMarkupForCustomAttribute,
+    createMarkupForProperty
+} from './react-dom/src/server/DOMMarkupOperations';
 import createMarkupForStyles from './reactUtils/createMarkupForStyles';
-import escapeTextForBrowser from './reactUtils/escapeTextForBrowser';
+
 import { PrimaryCacheContext, createCache } from '../react';
 
 export const ROOT_TYPE = Symbol('ROOT_TYPE');
@@ -64,15 +71,11 @@ function getMarkupForChildren(children, staticMarkup, selectedValue) {
     return childrenMarkup.join('');
 }
 
-const attributeBlacklist = {
-    dangerouslySetInnerHTML: true,
-    children: true,
-    dangerouslySetInnerHTML: true,
-    defaultValue: true,
-    defaultChecked: true,
-    innerHTML: true,
-    suppressContentEditableWarning: true,
-    suppressHydrationWarning: true
+const RESERVED_PROPS = {
+    children: null,
+    dangerouslySetInnerHTML: null,
+    suppressContentEditableWarning: null,
+    suppressHydrationWarning: null
 };
 
 export class SSRTreeNode {
@@ -98,22 +101,31 @@ export class SSRTreeNode {
         this.attributes[name] = value;
     }
     attributesToString(attributes) {
-        const attributesArray = [];
-        for (const key of Object.keys(attributes)) {
-            if (
-                attributes.hasOwnProperty(key) &&
-                attributes[key] != null &&
-                attributes[key] !== false &&
-                !attributeBlacklist[key]
-            ) {
-                let value = attributes[key];
-                if (value === true) {
-                    value = '';
+        let ret = '';
+        for (const key in attributes) {
+            if (!attributes.hasOwnProperty(key)) {
+                continue;
+            }
+            let value = attributes[key];
+            if (value == null) {
+                continue;
+            }
+            if (key === 'style') {
+                value = createMarkupForStyles(value);
+            }
+            let markup = null;
+            if (isCustomComponent(this.type.toLowerCase(), attributes)) {
+                if (!RESERVED_PROPS.hasOwnProperty(key)) {
+                    markup = createMarkupForCustomAttribute(key, value);
                 }
-                attributesArray.push(key + '="' + value + '"');
+            } else {
+                markup = createMarkupForProperty(key, value);
+            }
+            if (markup) {
+                ret += ' ' + markup;
             }
         }
-        return attributesArray.length ? ' ' + attributesArray.join(' ') : '';
+        return ret;
     }
     toString(staticMarkup, previousWasText, isRoot, selectedValue) {
         let renderAttributes = this.attributes;
@@ -272,11 +284,6 @@ const hostConfig = {
                 }
             } else if (propName === 'className') {
                 element.setAttribute('class', propValue);
-            } else if (propName === 'style') {
-                element.setAttribute(
-                    propName,
-                    createMarkupForStyles(propValue)
-                );
             } else if (!isEventListener(propName)) {
                 element.setAttribute(propName, propValue);
             }

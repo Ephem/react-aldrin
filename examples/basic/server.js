@@ -6,8 +6,7 @@ import React from 'react';
 import express from 'express';
 
 import { renderToString } from '../../src/renderer';
-import { createCache } from '../../src/react';
-import { App, CacheContext } from './src';
+import { App } from './src';
 
 const app = express();
 const port = 3000;
@@ -34,13 +33,8 @@ const createHtml = (markup, cache) => `
 app.use(express.static(path.join(__dirname, 'dist')));
 
 app.get('/', async (req, res) => {
-    const cache = createCache();
-    const { html } = await renderToString(
-        <CacheContext.Provider value={cache}>
-            <App />
-        </CacheContext.Provider>
-    );
-    res.send(createHtml(html, cache.serialize()));
+    const { markup, cache } = await renderToString(<App />);
+    res.send(createHtml(markup, cache.serialize()));
 });
 
 app.listen(port, () =>

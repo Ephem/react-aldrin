@@ -1,16 +1,19 @@
-import React, { Suspense, createContext } from 'react';
+import React, { Suspense } from 'react';
 import ReactDOM from 'react-dom';
 
-import { createResource, createCache, useContext } from '../../../src/react';
-
-const CacheContext = createContext();
+import {
+    createResource,
+    createCache,
+    useContext,
+    PrimaryCacheContext
+} from '../../../src/react';
 
 const catFacts = createResource('catFacts', () =>
     fetch('https://cat-fact.herokuapp.com/facts/random').then(res => res.json())
 );
 
 function CatFact() {
-    const cache = useContext(CacheContext);
+    const cache = useContext(PrimaryCacheContext);
     const fact = catFacts.read(cache);
 
     return <p>Random cat fact: {fact.text}</p>;
@@ -27,19 +30,16 @@ function App() {
 }
 
 if (typeof window !== 'undefined') {
-    const cacheData = window.CACHE_DATA;
-    const cache = createCache();
-    cache.deserialize(cacheData);
+    const cache = createCache(window.CACHE_DATA);
 
     ReactDOM.hydrate(
-        <CacheContext.Provider value={cache}>
+        <PrimaryCacheContext.Provider value={cache}>
             <App />
-        </CacheContext.Provider>,
+        </PrimaryCacheContext.Provider>,
         document.getElementById('react-app')
     );
 }
 
 module.exports = {
-    App,
-    CacheContext
+    App
 };

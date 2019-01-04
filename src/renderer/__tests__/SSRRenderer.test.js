@@ -7,8 +7,8 @@ async function expectMarkupToMatch(app) {
     const output = renderToString(app);
     const expectedStatic = ReactDOMServer.renderToStaticMarkup(app);
     const expectedMarkup = ReactDOMServer.renderToString(app);
-    expect((await staticOutput).html).toBe(expectedStatic);
-    expect((await output).html).toBe(expectedMarkup);
+    expect((await staticOutput).markup).toBe(expectedStatic);
+    expect((await output).markup).toBe(expectedMarkup);
 }
 
 describe('SSRRenderer', () => {
@@ -83,9 +83,12 @@ describe('SSRRenderer', () => {
         await expectMarkupToMatch(<div style={{ width: 10 }} />);
     });
     it('should not render with event listeners', async () => {
+        jest.spyOn(console, 'error');
+        console.error.mockImplementation(() => {});
         await expectMarkupToMatch(
             <div onClick={() => {}} onclick="alert('Noo');" />
         );
+        console.error.mockRestore();
     });
     it('should render input with defaultValue correctly', async () => {
         await expectMarkupToMatch(<input defaultValue="value" />);
@@ -100,14 +103,14 @@ describe('SSRRenderer', () => {
         await expectMarkupToMatch(<textarea defaultValue="Some text here" />);
     });
     it('should render select without value', async () => {
-        await expectMarkupToMatch(<select value="value" />);
+        await expectMarkupToMatch(<select value="value" onChange={() => {}} />);
     });
     it('should render select without defaultValue', async () => {
         await expectMarkupToMatch(<select defaultValue="value" />);
     });
     it('should render select with correct selected option based on value', async () => {
         await expectMarkupToMatch(
-            <select value="2">
+            <select value="2" onChange={() => {}}>
                 <option value="1">Option 1</option>
                 <option value="2">Option 2</option>
             </select>
@@ -123,7 +126,11 @@ describe('SSRRenderer', () => {
     });
     it('should render select with correct selected multiple options', async () => {
         await expectMarkupToMatch(
-            <select multiple value={['Option 1', 'Option 3']}>
+            <select
+                multiple
+                value={['Option 1', 'Option 3']}
+                onChange={() => {}}
+            >
                 <option>Option 1</option>
                 <option>Option 2</option>
                 <option>Option 3</option>
@@ -132,11 +139,20 @@ describe('SSRRenderer', () => {
     });
     it('should render select with correct selected multiple options based on value', async () => {
         await expectMarkupToMatch(
-            <select multiple value={['1', '3']}>
+            <select multiple value={['1', '3']} onChange={() => {}}>
                 <option value="1">Option 1</option>
                 <option value="2">Option 2</option>
                 <option value="3">Option 3</option>
             </select>
+        );
+    });
+    it('should render with dangerouslySetInnerHTML', async () => {
+        await expectMarkupToMatch(
+            <div
+                dangerouslySetInnerHTML={{
+                    __html: '<span>Some text</span>'
+                }}
+            />
         );
     });
 });

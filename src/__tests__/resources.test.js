@@ -1,9 +1,11 @@
 import React, { Suspense, useState, useReducer, useContext } from 'react';
 
 import { renderToString } from '../renderer/SSRRenderer';
-import { createResource, createCache } from '../react/cache';
-
-const CacheContext = React.createContext();
+import {
+    createResource,
+    createCache,
+    PrimaryCacheContext
+} from '../react/cache';
 
 const getResource = (timeout = 10, value = 'Async resource') => {
     let calls = { count: 0 };
@@ -24,7 +26,7 @@ const CacheFromProp = ({ cache, resource }) => {
 };
 
 const CacheFromContext = ({ resource }) => {
-    const cache = useContext(CacheContext);
+    const cache = useContext(PrimaryCacheContext);
     const text = resource.read(cache);
     return text;
 };
@@ -44,39 +46,36 @@ describe('SSRRenderer resources', () => {
         const cache = createCache();
         const { resource } = getResource();
 
-        const { html } = await renderToString(
+        const { markup } = await renderToString(
             <SuspenseApp>
                 <CacheFromProp cache={cache} resource={resource} />
             </SuspenseApp>
         );
-        expect(html).toBe('<div data-reactroot="">Async resource</div>');
+        expect(markup).toBe('<div data-reactroot="">Async resource</div>');
     });
     it('renders with fallback if timed out', async () => {
         const cache = createCache();
         const { resource } = getResource(10000);
 
-        const { html } = await renderToString(
+        const { markup } = await renderToString(
             <SuspenseApp timeout={10}>
                 <CacheFromProp cache={cache} resource={resource} />
             </SuspenseApp>
         );
-        expect(html).toBe('<div data-reactroot="">Loading...</div>');
+        expect(markup).toBe('<div data-reactroot="">Loading...</div>');
     });
 
     it('can use a context to store the cache in order to serialize and later rehydrate it', async () => {
         // Server rendering part of test
         const expectedHtml = '<div data-reactroot="">Async resource</div>';
-        const cache = createCache();
         const { resource, calls } = getResource();
 
-        const { html } = await renderToString(
-            <CacheContext.Provider value={cache}>
-                <SuspenseApp>
-                    <CacheFromContext resource={resource} />
-                </SuspenseApp>
-            </CacheContext.Provider>
+        const { markup, cache } = await renderToString(
+            <SuspenseApp>
+                <CacheFromContext resource={resource} />
+            </SuspenseApp>
         );
-        expect(html).toBe(expectedHtml);
+        expect(markup).toBe(expectedHtml);
         expect(calls.count).toBe(1);
         const serialized = cache.serialize();
 
@@ -92,18 +91,17 @@ describe('SSRRenderer resources', () => {
             }
         });
 
-        const rehydratedCache = createCache();
-        rehydratedCache.deserialize(deserialized);
+        const rehydratedCache = createCache(deserialized);
 
-        const rehydratedResult = await renderToString(
-            <CacheContext.Provider value={rehydratedCache}>
+        const { markup: rehydratedResult } = await renderToString(
+            <PrimaryCacheContext.Provider value={rehydratedCache}>
                 <SuspenseApp>
                     <CacheFromContext resource={resource} />
                 </SuspenseApp>
-            </CacheContext.Provider>
+            </PrimaryCacheContext.Provider>
         );
 
-        expect(rehydratedResult.html).toBe(expectedHtml);
+        expect(rehydratedResult).toBe(expectedHtml);
         expect(calls.count).toBe(1);
     });
 });

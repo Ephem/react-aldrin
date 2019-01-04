@@ -35,9 +35,9 @@ const App = () => {
 function render() {
     let startTime = Date.now();
     console.log('Start');
-    renderToString(<App />).then(({ html }) => {
+    renderToString(<App />).then(({ markup }) => {
         console.log('Render took', Date.now() - startTime);
-        console.log('HTML', html);
+        console.log('HTML', markup);
     });
 }
 

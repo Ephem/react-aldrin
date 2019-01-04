@@ -28,13 +28,15 @@
  * SOFTWARE.
  */
 
+import { createContext } from 'react';
+
 const Empty = 0;
 const Pending = 1;
 const Resolved = 2;
 const Rejected = 3;
 
-export function createCache(invalidator) {
-    let resourceCache = {};
+export function createCache(initial, invalidator) {
+    let resourceCache = initial || {};
 
     function getRecord(resourceName, key) {
         let recordCache = resourceCache[resourceName];
@@ -149,9 +151,6 @@ export function createCache(invalidator) {
                 return value;
             }
             return JSON.stringify(resourceCache, replacer);
-        },
-        deserialize(cache) {
-            resourceCache = cache;
         }
     };
 
@@ -186,3 +185,5 @@ export function createResource(resourceName, loadResource, hash) {
     };
     return resource;
 }
+
+export const PrimaryCacheContext = createContext(createCache());

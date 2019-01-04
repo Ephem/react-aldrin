@@ -38,6 +38,7 @@ import emptyObject from 'fbjs/lib/emptyObject';
 import omittedCloseTags from './reactUtils/omittedCloseTags';
 import createMarkupForStyles from './reactUtils/createMarkupForStyles';
 import escapeTextForBrowser from './reactUtils/escapeTextForBrowser';
+import { PrimaryCacheContext, createCache } from '../react';
 
 export const ROOT_TYPE = Symbol('ROOT_TYPE');
 export const ROOT_STATIC_TYPE = Symbol('ROOT_STATIC_TYPE');
@@ -62,6 +63,17 @@ function getMarkupForChildren(children, staticMarkup, selectedValue) {
     }
     return childrenMarkup.join('');
 }
+
+const attributeBlacklist = {
+    dangerouslySetInnerHTML: true,
+    children: true,
+    dangerouslySetInnerHTML: true,
+    defaultValue: true,
+    defaultChecked: true,
+    innerHTML: true,
+    suppressContentEditableWarning: true,
+    suppressHydrationWarning: true
+};
 
 export class SSRTreeNode {
     constructor(type, text) {
@@ -91,7 +103,8 @@ export class SSRTreeNode {
             if (
                 attributes.hasOwnProperty(key) &&
                 attributes[key] != null &&
-                attributes[key] !== false
+                attributes[key] !== false &&
+                !attributeBlacklist[key]
             ) {
                 let value = attributes[key];
                 if (value === true) {
@@ -106,6 +119,9 @@ export class SSRTreeNode {
         let renderAttributes = this.attributes;
         let selectSelectedValue;
         let childrenMarkup;
+        const rawInnerHtml =
+            this.attributes.dangerouslySetInnerHTML &&
+            this.attributes.dangerouslySetInnerHTML.__html;
         if (this.type === ROOT_STATIC_TYPE) {
             let markup = getMarkupForChildren(this.children, staticMarkup);
             return markup;
@@ -198,6 +214,7 @@ export class SSRTreeNode {
             renderAttributes
         )}${isRoot ? ' data-reactroot=""' : ''}${selfClose ? '/>' : '>'}`;
         childrenMarkup =
+            rawInnerHtml ||
             childrenMarkup ||
             getMarkupForChildren(
                 this.children,
@@ -387,7 +404,7 @@ function ReactWork(root, { staticMarkup = false } = {}) {
 }
 ReactWork.prototype.then = function(onCommit) {
     if (this._didCommit) {
-        onCommit({ html: this._internalRoot.toString(this._staticMarkup) });
+        onCommit(this._internalRoot.toString(this._staticMarkup));
         return;
     }
     let callbacks = this._callbacks;
@@ -408,9 +425,7 @@ ReactWork.prototype._onCommit = function() {
     // TODO: Error handling.
     for (let i = 0; i < callbacks.length; i++) {
         const callback = callbacks[i];
-        callback({
-            html: this._internalRoot.toString(this._staticMarkup)
-        });
+        callback(this._internalRoot.toString(this._staticMarkup));
     }
 };
 
@@ -421,53 +436,33 @@ function createRoot(options) {
 export function renderToString(element) {
     return new Promise((resolve, reject) => {
         const root = createRoot();
-        return root.render(element).then((...args) => {
-            resolve(...args);
-        });
+        const cache = createCache();
+        return root
+            .render(
+                <PrimaryCacheContext.Provider value={cache}>
+                    {element}
+                </PrimaryCacheContext.Provider>
+            )
+            .then(markup => {
+                resolve({ markup, cache });
+            });
     });
-    /*
-    return new Promise((resolve, reject) => {
-        let ssrTreeRootNode = new SSRTreeNode(ROOT_TYPE);
-        let root = SSRRenderer.createContainer(ssrTreeRootNode);
-
-        function markSSRDone(cache) {
-            resolve({ html: ssrTreeRootNode.toString(), cache });
-        }
-
-        renderToRoot(
-            <SSRContextProvider markSSRDone={markSSRDone}>
-                {element}
-            </SSRContextProvider>,
-            root
-        );
-    });
-    */
 }
 
 export function renderToStaticMarkup(element) {
     return new Promise((resolve, reject) => {
         const root = createRoot({ staticMarkup: true });
-        return root.render(element).then((...args) => {
-            resolve(...args);
-        });
+        const cache = createCache();
+        return root
+            .render(
+                <PrimaryCacheContext.Provider value={cache}>
+                    {element}
+                </PrimaryCacheContext.Provider>
+            )
+            .then(markup => {
+                resolve({ markup, cache });
+            });
     });
-    /*
-    return new Promise((resolve, reject) => {
-        let ssrTreeRootNode = new SSRTreeNode(ROOT_STATIC_TYPE);
-        let root = SSRRenderer.createContainer(ssrTreeRootNode);
-
-        function markSSRDone(cache) {
-            resolve({ html: ssrTreeRootNode.toString(true), cache });
-        }
-
-        renderToRoot(
-            <SSRContextProvider markSSRDone={markSSRDone}>
-                {element}
-            </SSRContextProvider>,
-            root
-        );
-    });
-    */
 }
 
 export default {

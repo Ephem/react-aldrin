@@ -29,8 +29,8 @@ describe('SSRRenderer', () => {
                 return <div>{state}</div>;
             }
             const app = <App initialState="It works!" />;
-            const { html } = await renderToString(app);
-            expect(html).toBe('<div data-reactroot="">It works!</div>');
+            const { markup } = await renderToString(app);
+            expect(markup).toBe('<div data-reactroot="">It works!</div>');
 
             // Browser test
             const { getByText } = render(app);
@@ -45,8 +45,8 @@ describe('SSRRenderer', () => {
                 return <div>It works!</div>;
             }
             const app = <App />;
-            const { html } = await renderToString(<App />);
-            expect(html).toBe('<div data-reactroot="">It works!</div>');
+            const { markup } = await renderToString(<App />);
+            expect(markup).toBe('<div data-reactroot="">It works!</div>');
             expect(setCalled).not.toBeCalled();
 
             // Browser test
@@ -66,8 +66,8 @@ describe('SSRRenderer', () => {
                     <App />
                 </Context.Provider>
             );
-            const { html } = await renderToString(app);
-            expect(html).toBe('<div data-reactroot="">Correct</div>');
+            const { markup } = await renderToString(app);
+            expect(markup).toBe('<div data-reactroot="">Correct</div>');
 
             // Browser test, mock console.error to avoid error about using Context in two renderers
             jest.spyOn(console, 'error');
@@ -92,8 +92,8 @@ describe('SSRRenderer', () => {
                 return <div>{state}</div>;
             }
             const app = <App initialState="It works!" />;
-            const { html } = await renderToString(app);
-            expect(html).toBe(
+            const { markup } = await renderToString(app);
+            expect(markup).toBe(
                 '<div data-reactroot="">This is what should show</div>'
             );
 
@@ -108,8 +108,8 @@ describe('SSRRenderer', () => {
                 expect(cb).toBe(setCalled);
                 return <div>It works!</div>;
             }
-            const { html } = await renderToString(<App />);
-            expect(html).toBe('<div data-reactroot="">It works!</div>');
+            const { markup } = await renderToString(<App />);
+            expect(markup).toBe('<div data-reactroot="">It works!</div>');
             expect(setCalled).not.toBeCalled();
         });
         it('useMemo should work', async () => {
@@ -127,8 +127,8 @@ describe('SSRRenderer', () => {
 
                 return <div>{value}</div>;
             }
-            const { html } = await renderToString(<App />);
-            expect(html).toBe('<div data-reactroot="">3</div>');
+            const { markup } = await renderToString(<App />);
+            expect(markup).toBe('<div data-reactroot="">3</div>');
             expect(add).toHaveBeenCalledTimes(1);
 
             // Browser test
@@ -148,8 +148,8 @@ describe('SSRRenderer', () => {
 
                 return <div>{ref.current}</div>;
             }
-            const { html } = await renderToString(<App />);
-            expect(html).toBe('<div data-reactroot="">1</div>');
+            const { markup } = await renderToString(<App />);
+            expect(markup).toBe('<div data-reactroot="">1</div>');
 
             // Browser test
             const { getByText } = render(<App />);
@@ -170,8 +170,8 @@ describe('SSRRenderer', () => {
                 return <div ref={ref}>It works!</div>;
             }
             const InnerWithRef = forwardRef(Inner);
-            const { html } = await renderToString(<App />);
-            expect(html).toBe(
+            const { markup } = await renderToString(<App />);
+            expect(markup).toBe(
                 '<div data-reactroot=""><div>It works!</div></div>'
             );
             expect(setCalled).not.toBeCalled();
@@ -194,8 +194,8 @@ describe('SSRRenderer', () => {
                 return <div>It works!</div>;
             }
             const app = <App />;
-            const { html } = await renderToString(app);
-            expect(html).toBe('<div data-reactroot="">It works!</div>');
+            const { markup } = await renderToString(app);
+            expect(markup).toBe('<div data-reactroot="">It works!</div>');
             process.env.NODE_ENV = oldEnv;
             await renderToString(app);
             expect(setCalled).not.toBeCalled();

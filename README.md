@@ -268,6 +268,7 @@ This list is really incomplete, but I thought I'd list at least a couple of thin
 *   Code cleanup
 *   Think even harder about how to automatically skip class-lifecycles and certain hooks in the server renderer.. Would allow working with existing packages and code.
 *   Better support for preloading, cache invalidation and a bunch of other stuff
+*   Test and possibly add support for `componentDidCatch` and `getDerivedStateFromError`
 *   Documenting currently undocumented APIs
 *   Document experiments and lessons learned
 

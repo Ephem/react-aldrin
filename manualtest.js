@@ -1,4 +1,4 @@
-import React, { Suspense, useState } from 'react';
+import React, { Suspense, useState, useEffect } from 'react';
 import { renderToString } from './src/renderer/SSRRenderer';
 import { createResource, createCache } from './src/react/cache';
 
@@ -17,6 +17,10 @@ const Inner = () => {
 
 const FirstInner = () => {
     const [state, setState] = useState('Loading...');
+
+    // Effect should not be fired
+    useEffect(() => console.log('Effect!'));
+
     return (
         <Suspense maxDuration={5000} fallback={state}>
             <Inner />
@@ -24,13 +28,19 @@ const FirstInner = () => {
     );
 };
 
-const App = () => {
-    return (
-        <div>
-            <FirstInner />
-        </div>
-    );
-};
+class App extends React.Component {
+    componentDidMount() {
+        // componentDidMount should not be called
+        console.log('Mount');
+    }
+    render() {
+        return (
+            <div>
+                <FirstInner />
+            </div>
+        );
+    }
+}
 
 function render() {
     let startTime = Date.now();

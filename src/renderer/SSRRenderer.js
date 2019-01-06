@@ -28,6 +28,8 @@
  * SOFTWARE.
  */
 
+import './reactMonkeyPatch';
+
 // For now the scheduler uses requestAnimationFrame,
 // so we need to polyfill it
 import 'raf/polyfill';

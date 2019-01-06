@@ -16,6 +16,8 @@ With a few important caveats, this project is a working serverside renderer for 
 npm install react-aldrin react@16.7.0-alpha.2 react-dom@16.7.0-alpha.2 --save
 ```
 
+See `examples/basic` for a full working example.
+
 **Fetching data**
 
 ```jsx
@@ -41,10 +43,10 @@ export default function Color({ colorId }) {
 **Server rendering**
 
 ```jsx
-// Make sure your data fetching is supported on the server
+// Import react-aldrin at the top for monkey-patching to work
+import { renderToString } from 'react-aldrin';
 import 'isomorphic-fetch';
 import React from 'react';
-import { renderToString } from 'react-aldrin';
 import { App } from './App.js';
 
 (...)
@@ -70,40 +72,31 @@ import { App } from './App.js';
 hydrate(<App />, document.getElementById('react-app'));
 ```
 
-That's it! You can fetch data as deep in the component tree as you want and it will automatically be fetched within a single render pass and de/rehydrated to the client for you. No more hoisting data dependencies to the route-level (Next.js) or double-rendering (Apollo).
-
-See `examples/basic` for a full working example, or bottom of this README for a slimmed one.
+That's it! You can fetch data as deep in the component tree as you want and it will automatically be fetched within a single render pass and de/rehydrated to the client for you. No more hoisting data dependencies to the route-level (like in Next.js) or double-rendering (like in Apollo).
 
 ## :warning: Caveats and limitations
 
 This renderer is built on top of the React Reconciler, as opposed to the official serverside renderer which is a complete standalone implementation. This has a few important implications:
 
 *   In many respects this renderer behaves as if it was a client-renderer!
-    *   Lifecycles like `componentDidMount` actually runs
-    *   Out of the box, hooks behave as on the client (but see next section)
+    *   :open_mouth: Both hooks and lifecycles would normally behave as on the client..
+    *   :see_no_evil: ..but these have been monkey patched to not do so
+    *   :exclamation: Make sure you import `react-aldrin` at the very start of your application for monkey patching to work
 *   Performance is (probably) not what it should be
 *   Streaming is impossible
 *   Etc..
 
-There are also tons of other unsolved problems and limitations, like cache invalidation strategies, multiple roots sharing a cache etc, etc.. There are good reasons these things take a lot of time to get right when aiming for production use!
+There are also tons of other unsolved problems and limitations:
 
-For these and other reasons, this will never be a serious attempt at building a stable renderer, the aim is simply to explore what code patterns _could possibly_ look like with Suspense+SSR.
+*   Cache invalidation strategies
+*   Multiple roots sharing a cache
+*   Only supports version `16.7.0-alpha.2`
+*   Is likely to break with future React updates
+*   Untested with larger applications, likely to have tons of bugs
 
-Finally, this renderer only aim to explore possible future code patterns, not any other of the exciting stuff which the React team is also working on, like improved streaming rendering, partial hydration etc!
+Finally, this renderer only aim to explore possible future code patterns, not any other of the exciting stuff which the React team is also working on, like improved streaming rendering, partial hydration etc! :tada:
 
-### Three simple rules to deal with the limitations
-
-This package has thin wrappers around all React hooks, that make sure the correct ones run on the client and on the server.
-
-If you still want to experiment, it is therefor recommended that you follow these three simple rules:
-
-1.  Don't use class-based components
-2.  Import all hooks directly from this package instead of from React
-3.  Because of the two above rules, don't use any components from external libraries that uses lifecycles or hooks..
-
-You _could_ break these rules and still get things to work, in quite interesting ways actually, but it is likely to bite you in intricate and hard to debug ways.
-
-Even if you do follow these rules, remember this is highly experimental, so your luck might still vary, please file issues if you run into problems while following these rules.
+> This is not a serious attempt at building a stable renderer, the aim is simply to explore what code patterns _could possibly_ look like with Suspense+SSR.
 
 ## API
 
@@ -182,82 +175,6 @@ This is a React-hook that reads from the resource, passing in `key` as argument.
 
 These are available for advanced behaviours like using multiple caches or taking care of cache-serialization and hydration yourself, but they are currently undocumented. This package and its examples are currently focused on showing off the easiest possible and most magical of worlds. :sparkles: :crystal_ball: :sparkles:
 
-#### `useEffect`, `useLayoutEffect`, `useImperativeMethods`, `useCallback`, `useContext`, `useState`, `useReducer`, `useContext`, `useRef`, `useMemo`
-
-All the React-hooks should be imported from this package. These are just thin wrappers around the real React-hooks to make sure only the correct ones are run on the serverside.
-
-## Full Example
-
-This is a slightly slimmed version of the working example found in `examples/basic`:
-
-**App.js**
-
-```jsx
-import React, { Suspense } from 'react';
-import { hydrate, createResource, useReadResource } from 'react-aldrin/react';
-
-const apiUrl = 'http://www.made-up-color-api.com/api/colors/';
-
-const colorResource = createResource('colorResource', colorId =>
-    fetch(apiUrl + colorId).then(res => res.text())
-);
-
-function Color({ colorId }) {
-    const colorName = useReadResource(colorResource, colorId);
-
-    return <p>This is a color: {colorName}</p>;
-}
-
-function App() {
-    return (
-        <Suspense fallback={'Loading...'}>
-            <Color colorId="1" />
-            <Color colorId="2" />
-            <Color colorId="3" />
-        </Suspense>
-    );
-}
-
-if (typeof window !== 'undefined') {
-    hydrate(<App />, document.getElementById('react-app'));
-}
-
-export default App;
-```
-
-**server.js**
-
-```jsx
-import 'isomorphic-fetch';
-import React from 'react';
-import { renderToString } from 'react-aldrin';
-import express from 'express';
-import { App } from './App.js';
-
-const createHtml = markup => `
-<!DOCTYPE html>
-<html lang="en">
-
-<head><title>Color example</title></head>
-
-<body>
-  <div id="react-app">${markup}</div>
-  <script src="app.bundle.js"></script>
-</body>
-
-</html>
-`;
-
-const app = express();
-
-app.get('/', async (req, res) => {
-    const { markupWithCacheData } = await renderToString(<App />);
-    res.send(createHtml(markupWithCacheData));
-});
-
-app.listen(3000);
-```
-
 ## Todo
 
 This list is really incomplete, but I thought I'd list at least a couple of things:
@@ -266,7 +183,6 @@ This list is really incomplete, but I thought I'd list at least a couple of thin
 *   Safer serialization of data
 *   More tests
 *   Code cleanup
-*   Think even harder about how to automatically skip class-lifecycles and certain hooks in the server renderer.. Would allow working with existing packages and code.
 *   Better support for preloading, cache invalidation and a bunch of other stuff
 *   Test and possibly add support for `componentDidCatch` and `getDerivedStateFromError`
 *   Documenting currently undocumented APIs

@@ -45,6 +45,7 @@ import {
 } from './react-dom/src/server/DOMMarkupOperations';
 import createMarkupForStyles from './reactUtils/createMarkupForStyles';
 
+import DispatcherModifier from './DispatcherModifier';
 import { PrimaryCacheContext, createCache } from '../react';
 
 export const ROOT_TYPE = Symbol('ROOT_TYPE');
@@ -446,9 +447,11 @@ export function renderToString(element) {
         const cache = createCache();
         return root
             .render(
-                <PrimaryCacheContext.Provider value={cache}>
-                    {element}
-                </PrimaryCacheContext.Provider>
+                <DispatcherModifier>
+                    <PrimaryCacheContext.Provider value={cache}>
+                        {element}
+                    </PrimaryCacheContext.Provider>
+                </DispatcherModifier>
             )
             .then(markup => {
                 const cacheData = cache.serialize();
@@ -465,9 +468,11 @@ export function renderToStaticMarkup(element) {
         const cache = createCache();
         return root
             .render(
-                <PrimaryCacheContext.Provider value={cache}>
-                    {element}
-                </PrimaryCacheContext.Provider>
+                <DispatcherModifier>
+                    <PrimaryCacheContext.Provider value={cache}>
+                        {element}
+                    </PrimaryCacheContext.Provider>
+                </DispatcherModifier>
             )
             .then(markup => {
                 resolve({ markup, cache });

@@ -1,7 +1,5 @@
-import React, { forwardRef } from 'react';
-import { render as testRender } from 'react-testing-library';
-
-import {
+import React, {
+    forwardRef,
     useState,
     useReducer,
     useContext,
@@ -11,8 +9,10 @@ import {
     useRef,
     useCallback,
     useMemo
-} from '../react/';
-import { renderToString } from '../renderer/SSRRenderer';
+} from 'react';
+import { render as testRender } from 'react-testing-library';
+
+import { renderToString } from '../SSRRenderer';
 
 function render(...args) {
     delete process.release.name;

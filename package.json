@@ -4,18 +4,15 @@
   "description": "An experimental React Suspense serverside renderer",
   "main": "dist/index.js",
   "scripts": {
-    "build":
-      "npm run build:babel && npm run build:rollup && npm run examples:basic:build",
-    "build:babel":
-      "rimraf dist && babel src/renderer --out-dir dist --ignore __tests__",
+    "build": "npm run build:babel && npm run build:rollup && npm run examples:basic:build",
+    "build:babel": "rimraf dist && babel src/renderer --out-dir dist --ignore __tests__",
     "build:rollup": "rimraf react.js && rollup -c",
     "build:babel:watch": "npm run build:babel -- --watch",
     "build:rollup:watch": "npm run build:rollup -- --watch",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:manual": "babel-node manualtest.js",
-    "examples:basic:build":
-      "cd examples/basic && webpack --mode production --module-bind js=babel-loader && cd ../..",
+    "examples:basic:build": "cd examples/basic && webpack --mode production --module-bind js=babel-loader && cd ../..",
     "examples:basic:start": "node examples/basic"
   },
   "author": "Fredrik Höglund",
@@ -23,10 +20,10 @@
   "dependencies": {
     "fbjs": "0.8.16",
     "raf": "^3.4.0",
-    "react": "16.7.0-alpha.2",
-    "react-reconciler": "^0.18.0-alpha.2"
+    "react-reconciler": "0.18.0-alpha.2"
   },
   "peerDependencies": {
+    "react": "16.7.0-alpha.2",
     "react-dom": "16.7.0-alpha.2"
   },
   "devDependencies": {
@@ -47,8 +44,9 @@
     "nodemon": "^1.17.3",
     "prettier": "^1.12.1",
     "prettier-cli": "^0.1.0",
-    "react-dom": "16.7.0-alpha.2",
     "react-testing-library": "^5.3.2",
+    "react": "16.7.0-alpha.2",
+    "react-dom": "16.7.0-alpha.2",
     "rimraf": "^2.6.2",
     "rollup": "^0.58.2",
     "rollup-plugin-babel": "^3.0.4",

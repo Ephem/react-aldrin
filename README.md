@@ -74,7 +74,7 @@ That's it! You can fetch data as deep in the component tree as you want and it w
 
 See `examples/basic` for a full working example, or bottom of this README for a slimmed one.
 
-## Caveats and limitations
+## :warning: Caveats and limitations
 
 This renderer is built on top of the React Reconciler, as opposed to the official serverside renderer which is a complete standalone implementation. This has a few important implications:
 
@@ -91,14 +91,15 @@ For these and other reasons, this will never be a serious attempt at building a 
 
 Finally, this renderer only aim to explore possible future code patterns, not any other of the exciting stuff which the React team is also working on, like improved streaming rendering, partial hydration etc!
 
-### Two simple rules to deal with the limitations
+### Three simple rules to deal with the limitations
 
 This package has thin wrappers around all React hooks, that make sure the correct ones run on the client and on the server.
 
-If you still want to experiment, it is therefor recommended that you follow these two simple rules:
+If you still want to experiment, it is therefor recommended that you follow these three simple rules:
 
-1.  Don't use class-based components, this includes using any libraries that use them..
+1.  Don't use class-based components
 2.  Import all hooks directly from this package instead of from React
+3.  Because of the two above rules, don't use any components from external libraries that uses lifecycles or hooks..
 
 You _could_ break these rules and still get things to work, in quite interesting ways actually, but it is likely to bite you in intricate and hard to debug ways.
 
@@ -265,7 +266,7 @@ This list is really incomplete, but I thought I'd list at least a couple of thin
 *   Safer serialization of data
 *   More tests
 *   Code cleanup
-*   Think even harder about how to automatically skip class-lifecycles in the server renderer.. Seems hard to solve without forking reconciler, but would allow working with existing packages and code.
+*   Think even harder about how to automatically skip class-lifecycles and certain hooks in the server renderer.. Would allow working with existing packages and code.
 *   Better support for preloading, cache invalidation and a bunch of other stuff
 *   Documenting currently undocumented APIs
 *   Document experiments and lessons learned

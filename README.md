@@ -1,4 +1,4 @@
-# Experimental React Suspense Serverside Renderer
+# :moon: Aldrin - An Experimental React Suspense Serverside Renderer
 
 With a few important caveats, this project is a working serverside renderer for React, with out of the box support for Suspense data-fetching and hydration.
 
@@ -13,14 +13,14 @@ With a few important caveats, this project is a working serverside renderer for 
 **Install**
 
 ```bash
-npm install react-ssr-renderer react@16.7.0-alpha.2 react-dom@16.7.0-alpha.2 --save
+npm install react-aldrin react@16.7.0-alpha.2 react-dom@16.7.0-alpha.2 --save
 ```
 
 **Fetching data**
 
 ```jsx
 import React from 'react';
-import { createResource, useReadResource } from 'react-ssr-renderer/react';
+import { createResource, useReadResource } from 'react-aldrin/react';
 
 // Create a resource
 const apiUrl = 'http://www.made-up-color-api.com/api/colors/';
@@ -44,7 +44,7 @@ export default function Color({ colorId }) {
 // Make sure your data fetching is supported on the server
 import 'isomorphic-fetch';
 import React from 'react';
-import { renderToString } from 'react-ssr-renderer';
+import { renderToString } from 'react-aldrin';
 import { App } from './App.js';
 
 (...)
@@ -62,7 +62,7 @@ app.get('/', async (req, res) => {
 **Hydrate on the client**
 
 ```jsx
-import { hydrate } from 'react-ssr-renderer/react';
+import { hydrate } from 'react-aldrin/react';
 import { App } from './App.js';
 
 // Using hydrate from this package will automatically
@@ -106,9 +106,9 @@ Even if you do follow these rules, remember this is highly experimental, so your
 
 ## API
 
-This package is split into two parts, `react-ssr-renderer` contains the server renderer and `react-ssr-renderer/react` contains helpers for React.
+This package is split into two parts, `react-aldrin` contains the server renderer and `react-aldrin/react` contains helpers for React.
 
-### `react-ssr-renderer`
+### `react-aldrin`
 
 #### `renderToString(element)`
 
@@ -145,7 +145,7 @@ This function will return a Promise which resolves to:
 }
 ```
 
-### `react-ssr-renderer/react`
+### `react-aldrin/react`
 
 #### `render(element, container[, callback])`
 
@@ -193,11 +193,7 @@ This is a slightly slimmed version of the working example found in `examples/bas
 
 ```jsx
 import React, { Suspense } from 'react';
-import {
-    hydrate,
-    createResource,
-    useReadResource
-} from 'react-ssr-renderer/react';
+import { hydrate, createResource, useReadResource } from 'react-aldrin/react';
 
 const apiUrl = 'http://www.made-up-color-api.com/api/colors/';
 
@@ -233,7 +229,7 @@ export default App;
 ```jsx
 import 'isomorphic-fetch';
 import React from 'react';
-import { renderToString } from 'react-ssr-renderer';
+import { renderToString } from 'react-aldrin';
 import express from 'express';
 import { App } from './App.js';
 

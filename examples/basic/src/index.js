@@ -1,16 +1,14 @@
 import React, { Suspense } from 'react';
-import { hydrate } from '../../../src/react';
-
-import { createResource, useReadResource } from '../../../src/react';
+import { hydrate, createResource, useReadResource } from '../../../src/react';
 
 const colorResource = createResource('colorResource', colorId =>
     fetch(`http://localhost:3000/api/colors/${colorId}`).then(res => res.text())
 );
 
 function Color({ colorId }) {
-    const color = useReadResource(colorResource, colorId);
+    const colorName = useReadResource(colorResource, colorId);
 
-    return <p>This is a color: {color}</p>;
+    return <p>This is a color: {colorName}</p>;
 }
 
 function App() {

@@ -1,197 +1,295 @@
-# Experimental React Serverside Renderer
+# Experimental React Suspense Serverside Renderer
 
-The official React renderer is a standalone implementation of React that for various (good) reasons does not use the reconciler that the other renderers use. This project ignores those reasons and aims to implement a React serverside renderer on top of the reconciler as an experiment and learning experience.
+With a few important caveats, this project is a working serverside renderer for React, with out of the box support for Suspense data-fetching and hydration.
 
-> Warning: I built this as an experiment and learning experience, code isn't cleaned up, it is missing a lot of validations and error messages and probably has tons of bugs (file issues!). It is not ready for production use and will contain breaking changes in minor releases.
+> :warning: This project is highly experimental and is not suitable for production use
 
-> Warning: This renderer does not aim to be a drop-in replacement for the official React SSR renderer. Also, it might break when React is updated and might not be compatible with upcoming React APIs.
+> :warning: This project does not in any way represent future React-APIs, or how the new Fizz server renderer will work
 
-> Note: This renderer calls all the lifecycle-hooks serverside, not just `componentWillMount`.
-
-> Last Note! All that aside, this is really fun stuff to play with if you're into serverside rendering with React, so I encourage you to try it out and play around with it! :)
-
-## Idea
-
-Using the normal reconciler, lifecycle events that are normally only called on the clientside (such as `componentDidMount`) will get called on the serverside using this renderer (this means your apps will probably break if you just switch this in). This in combination with a function injected into the React-context called `markSSRDone` let's this renderer support asynchronous server-rendering via `renderToStringAsync`.
-
-This feature is currently _not_ achieved with Suspense, but instead happens the same way as it does on the client today, via re-rendering changed parts until `markSSRDone` gets called. With some modifications it should be able to support Suspense when it is released properly.
-
-Accompanying the renderer are some React-helpers that can be used to simplify data-fetching that works both on the server and client, with support for de/rehydration of data between them. This is based on the `simple-cache-provider` that is the reference implementation for how fetching will most likely work with Suspense. You can also use the helper-component `<MarkSSRDone />` or implement these things yourself using the low-level API.
-
-If you want more background about my motivation, I recommend this blogpost: [React suspense and server rendering](https://blogg.svt.se/svti/react-suspense-server-rendering/)
+[This blogpost](https://blogg.svt.se/svti/react-suspense-server-rendering/) contains some background on React Suspense and SSR.
 
 ## Usage
 
-No npm-package yet, so if you want to play around with this, either clone it or npm-install it directly from GitHub.
+**Install**
 
-### Synchronous rendering
-
-```jsx
-import { renderToString, renderToStaticMarkup } from 'react-ssr-renderer';
-import App from './App';
-
-let markup = renderToString(<App />);
-// OR:
-// let markup = renderToStaticMarkup(<App />);
-
-// Do something with markup
+```bash
+npm install react-ssr-renderer react@16.7.0-alpha.2 react-dom@16.7.0-alpha.2 --save
 ```
 
-Besides watching all those lifecycle-hooks get called on the server this is not that exciting honestly, so lets dive into the next part.
-
-### Asynchronous rendering
-
-```jsx
-// This works with renderToStaticMarkupAsync as well
-import { renderToStringAsync } from 'react-ssr-renderer';
-import { SSRContextProvider } from 'react-ssr-renderer/react';
-import App from './App';
-
-renderToStringAsync(<App />, SSRContextProvider).then(({ html, cache }) => {
-    const cacheAsString = cache.serialize();
-    // Do something with html and cacheAsString
-});
-```
-
-There is a caveat with the above. Somewhere in your app, you have to call `markSSRDone` in order to tell the renderer that the app has finished rendering, else the promise will never resolve. This is not optimal, but thankfully there are several ways to do this which will be described next.
-
-#### MarkSSRDone-component
-
-The `<MarkSSRDone />`-component is the fastest way to get started, its only purpose is to call `markSSRDone`.
-
-```jsx
-import { MarkSSRDone } from 'react-ssr-renderer/react';
-
-export default const ComponentThatWillGetRenderedLast = () => {
-    return (
-        <div>
-            <p>When this component renders, you happen to know the app has finished rendering</p>
-            <MarkSSRDone />
-        </div>
-    );
-}
-```
-
-#### Low-level API
-
-The best way to describe the low-level API is to look at how the `<MarkSSRDone />`-component is implemented:
-
-```jsx
-import { SSRContext } from 'react-ssr-renderer/react';
-
-class CallDoneOnMount extends React.Component {
-    componentDidMount() {
-        this.props.done();
-    }
-    render() {
-        return null;
-    }
-}
-
-export const MarkSSRDone = () => (
-    <SSRContext.Consumer>
-        {({ markSSRDone }) => <CallDoneOnMount done={markSSRDone} />}
-    </SSRContext.Consumer>
-);
-```
-
-By using the `<SSRContext.Consumer>` yourself you can get a hold of the `markSSRDone`-function. When you call this, the current tree gets flushed and the rendering-promise resolves. You can provide `markSSRDone` with a cache-parameter that will be available when the promise resolves: `markSSRDone(myCache);`.
-
-#### Fetcher
-
-Most asynchronous work inside the rendering process on the server are usually API-calls to external APIs. If we keep track of the number of active requests, we can safely assume that rendering is done when all of them come back and the component-tree has been updated without triggering any new ones. This is exactly what the `<Fetcher>`-component does.
-
-It's not enough that we are able to trigger and use these API-calls on the server, we also need to send that data to the client in the html, so it can reuse the data without making new requests. The `<Fetcher>`-component does this for you in combination with `createResource`, modified from Reacts experimental `simple-cache-provider`.
-
-```jsx
-import axios from 'axios';
-import { Fetcher, createResource } from 'react-ssr-renderer/react';
-
-const foodResource = createResource('foodResource', (type) => {
-    // This function can be any promise
-    return axios
-            .get('http://made-up-url.top/api/recipes?type=' + type)
-            .then((response) => {
-                // Make sure you only return the part you want cached
-                return response.data
-            });
-});
-
-const RecipePresenter = ({ recipe, error }) => {
-    if (error) {
-        return <Error error={error} />
-    }
-    if (!data) {
-        return <Spinner />;
-    }
-    return <div>{recipe}</div>;
-}
-
-const Recipe = ({ type }) => {
-    return (
-        <Fetcher resource={foodResource} resourceKey={type}>
-            {({ data, error }) => <RecipePresenter recipe={data} error={error} />}
-        </Fetcher>
-    );
-}
-```
-
-If you use this `<Fetcher>` for all your data-loading, `markSSRDone` will get called automatically when all requests are done.
-
-> Caveat: In the example above, type happens to be a string. This is used as a key in the cache, so if you need to use complex objects as your resourceKey, you need to provide a hash-function as the third argument to `createResource` that creates a string from your arguments. `JSON.stringify` often works for plain objects, but it creates large keys in the cache that needs to get sent down to the client, so you probably want to actually provide a real hash-function..
-
-Lets revisit the asynchronous example from before:
-
-```jsx
-renderToStringAsync(<App />, SSRContextProvider).then(({ html, cache }) => {
-    const cacheAsString = cache.serialize();
-    // It is now up to you to place `cacheAsString` in the html
-    // that gets sent down to the client so it can be rehydrated.
-});
-```
-
-The `cache` in this example is provided automatically if you use `<Fetcher>`. We need to do one last thing to connect the dots, rehydrating the data on the client:
+**Fetching data**
 
 ```jsx
 import React from 'react';
-import ReactDOM from 'react-dom';
-import { SSRContextProvider } from 'react-ssr-renderer/react';
+import { createResource, useReadResource } from 'react-ssr-renderer/react';
 
-ReactDOM.render(
-    <SSRContextProvider cacheData={window.cacheData}>
-        <App />
-    </SSRContextProvider>
-, document.getElementById('root'));
+// Create a resource
+const apiUrl = 'http://www.made-up-color-api.com/api/colors/';
+const colorResource = createResource('colorResource', colorId =>
+    fetch(apiUrl + colorId).then(res => res.text())
+);
+
+// This component would have to be wrapped in a
+// <Suspense>-component from React
+export default function Color({ colorId }) {
+    // Read data from the resource, result is automatically cached
+    const colorName = useReadResource(colorResource, colorId);
+
+    return <p>This is a color: {colorName}</p>;
+}
 ```
 
-On the server the app gets wrapped in `<SSRContextProvider>` automatically when you use `renderToStringAsync`, but on the client you need to do this yourself if you want to rehydrate a cache. Change `window.cacheData` above to wherever you placed your cached data in the previous step.
+**Server rendering**
 
-> Note: All the functionality for the Fetcher is based only on the `markSSRDone`-function, you could implement your own fetchers with request-counting and a cache from scratch if you wanted to.
+```jsx
+// Make sure your data fetching is supported on the server
+import 'isomorphic-fetch';
+import React from 'react';
+import { renderToString } from 'react-ssr-renderer';
+import { App } from './App.js';
+
+(...)
+
+app.get('/', async (req, res) => {
+    // Rendering is now async, need to wait for it
+    const { markupWithCacheData } = await renderToString(<App />);
+
+    // In this case we are using "markupWithCacheData" which already
+    // contains the dehydrated data from the data fetching
+    res.render('index', { markupWithCacheData });
+});
+```
+
+**Hydrate on the client**
+
+```jsx
+import { hydrate } from 'react-ssr-renderer/react';
+import { App } from './App.js';
+
+// Using hydrate from this package will automatically
+// hydrate cache data as well as markup
+hydrate(<App />, document.getElementById('react-app'));
+```
+
+That's it! You can fetch data as deep in the component tree as you want and it will automatically be fetched within a single render pass and de/rehydrated to the client for you. No more hoisting data dependencies to the route-level (Next.js) or double-rendering (Apollo).
+
+See `examples/basic` for a full working example, or bottom of this README for a slimmed one.
+
+## Caveats and limitations
+
+This renderer is built on top of the React Reconciler, as opposed to the official serverside renderer which is a complete standalone implementation. This has a few important implications:
+
+*   In many respects this renderer behaves as if it was a client-renderer!
+    *   Lifecycles like `componentDidMount` actually runs
+    *   Out of the box, hooks behave as on the client (but see next section)
+*   Performance is (probably) not what it should be
+*   Streaming is impossible
+*   Etc..
+
+There are also tons of other unsolved problems and limitations, like cache invalidation strategies, multiple roots sharing a cache etc, etc.. There are good reasons these things take a lot of time to get right when aiming for production use!
+
+For these and other reasons, this will never be a serious attempt at building a stable renderer, the aim is simply to explore what code patterns _could possibly_ look like with Suspense+SSR.
+
+Finally, this renderer only aim to explore possible future code patterns, not any other of the exciting stuff which the React team is also working on, like improved streaming rendering, partial hydration etc!
+
+### Two simple rules to deal with the limitations
+
+This package has thin wrappers around all React hooks, that make sure the correct ones run on the client and on the server.
+
+If you still want to experiment, it is therefor recommended that you follow these two simple rules:
+
+1.  Don't use class-based components, this includes using any libraries that use them..
+2.  Import all hooks directly from this package instead of from React
+
+You _could_ break these rules and still get things to work, in quite interesting ways actually, but it is likely to bite you in intricate and hard to debug ways.
+
+Even if you do follow these rules, remember this is highly experimental, so your luck might still vary, please file issues if you run into problems while following these rules.
+
+## API
+
+This package is split into two parts, `react-ssr-renderer` contains the server renderer and `react-ssr-renderer/react` contains helpers for React.
+
+### `react-ssr-renderer`
+
+#### `renderToString(element)`
+
+Asyncronously render a React element to its initial HTML.
+
+Automatically wraps the `element` in a `<PrimaryCacheContext.Provider>` so resources can be used.
+
+**Returns**
+
+This function will return a Promise which resolves to:
+
+```
+{
+    markup,               // Markup
+    markupWithCacheData,  // Markup which includes serialized cache-data
+    cache                 // The cache
+}
+```
+
+#### `renderToStaticMarkup(element)`
+
+Asyncronously render the element to its initial HTML, but without the extra DOM attributes that React uses internally. Since it's not meant to hydrate, this never includes serialized cache-data (though you could do that yourself if needed).
+
+Automatically wraps the `element` in a `<PrimaryCacheContext.Provider>` so resources can be used.
+
+**Returns**
+
+This function will return a Promise which resolves to:
+
+```
+{
+    markup,  // Markup
+    cache    // The cache
+}
+```
+
+### `react-ssr-renderer/react`
+
+#### `render(element, container[, callback])`
+
+This proxies to the original `ReactDOM.render`.
+
+Automatically wraps the `element` in a `<PrimaryCacheContext.Provider>` so resources can be used. This means it is possible to use this package without the server renderer-part if you would want to.
+
+#### `hydrate(element, container[, callback])`
+
+This proxies to the original `ReactDOM.hydrate`, but it first hydrates the cache-data included in `markupWithCacheData` from `renderToString` and removes it from the DOM to avoid a hydration mismatch.
+
+Automatically wraps the `element` in a `<PrimaryCacheContext.Provider>` so resources can be used.
+
+#### `createResource(resourceName, loadResource[, hash])`
+
+1.  `resourceName` must be a unique name and the same when the server and client renders
+2.  `loadResource` is a function that takes an optional `key` as argument and returns a Promise which resolves to data, that is, the function that should be called to load the resource
+3.  `hash` is an optional function that is used to hash the `key` used to load some specific data before it is placed in the cache, useful if you want to use keys that are not serializeable by default
+
+**Returns**
+
+A `resource`, see below.
+
+#### `resource`
+
+This represents a resource. It is not meant to be used directly, but instead by passing it into the hook `useReadResource(resource, key)`. You can interact with it directly via a couple of functions by passing in a manually created cache, but this is currently undocumented.
+
+#### `useReadResource(resource, key)`
+
+This is a React-hook that reads from the resource, passing in `key` as argument. Directly returns the data for `key` if it is cached, throws data fetching-Promise and lets React re-render at a later point if data is not in cache. Uses `PrimaryCacheContext` behind the scenes.
+
+#### `PrimaryCacheContext`, `createCache([initialData])` and `cache`
+
+These are available for advanced behaviours like using multiple caches or taking care of cache-serialization and hydration yourself, but they are currently undocumented. This package and its examples are currently focused on showing off the easiest possible and most magical of worlds. :sparkles: :crystal_ball: :sparkles:
+
+#### `useEffect`, `useLayoutEffect`, `useImperativeMethods`, `useCallback`, `useContext`, `useState`, `useReducer`, `useContext`, `useRef`, `useMemo`
+
+All the React-hooks should be imported from this package. These are just thin wrappers around the real React-hooks to make sure only the correct ones are run on the serverside.
+
+## Full Example
+
+This is a slightly slimmed version of the working example found in `examples/basic`:
+
+**App.js**
+
+```jsx
+import React, { Suspense } from 'react';
+import {
+    hydrate,
+    createResource,
+    useReadResource
+} from 'react-ssr-renderer/react';
+
+const apiUrl = 'http://www.made-up-color-api.com/api/colors/';
+
+const colorResource = createResource('colorResource', colorId =>
+    fetch(apiUrl + colorId).then(res => res.text())
+);
+
+function Color({ colorId }) {
+    const colorName = useReadResource(colorResource, colorId);
+
+    return <p>This is a color: {colorName}</p>;
+}
+
+function App() {
+    return (
+        <Suspense fallback={'Loading...'}>
+            <Color colorId="1" />
+            <Color colorId="2" />
+            <Color colorId="3" />
+        </Suspense>
+    );
+}
+
+if (typeof window !== 'undefined') {
+    hydrate(<App />, document.getElementById('react-app'));
+}
+
+export default App;
+```
+
+**server.js**
+
+```jsx
+import 'isomorphic-fetch';
+import React from 'react';
+import { renderToString } from 'react-ssr-renderer';
+import express from 'express';
+import { App } from './App.js';
+
+const createHtml = markup => `
+<!DOCTYPE html>
+<html lang="en">
+
+<head><title>Color example</title></head>
+
+<body>
+  <div id="react-app">${markup}</div>
+  <script src="app.bundle.js"></script>
+</body>
+
+</html>
+`;
+
+const app = express();
+
+app.get('/', async (req, res) => {
+    const { markupWithCacheData } = await renderToString(<App />);
+    res.send(createHtml(markupWithCacheData));
+});
+
+app.listen(3000);
+```
 
 ## Todo
 
-This section could be very long, so I'll just mention a few things:
+This list is really incomplete, but I thought I'd list at least a couple of things:
 
-*   Clean up the code (you know, naming, structure, comments and stuff)..
-*   A lot of validation and warnings
-*   A lot of edgecases in the renderer
-*   A lot more testing, both:
-    *   More Jest-tests
-    *   Trying the whole thing out in larger projects. I have currently only tested the application in quite small settings.
-*   Better documentation
-*   Finding a better name
-*   Publishing a npm-package (or splitting it into two separate packages)
-*   Performance tests
+*   Bigger and better examples
+*   Safer serialization of data
+*   More tests
+*   Code cleanup
+*   Think even harder about how to automatically skip class-lifecycles in the server renderer.. Seems hard to solve without forking reconciler, but would allow working with existing packages and code.
+*   Better support for preloading, cache invalidation and a bunch of other stuff
+*   Documenting currently undocumented APIs
+*   Document experiments and lessons learned
 
-Just to be clear, I view this as an experiment and have no ambition to make it production ready. Even so, if you think it's fun, feel free to contribute, open issues or chat me up for a discussion. :)
+Just to be clear, I view this as an experiment and have no ambition to make it production ready. Even so, if you think it's fun, feel free to contribute, open issues or chat me up for a discussion. :smile: :envelope:
+
+I'd also love to hear from you if you experiment with it! :love_letter:
 
 ## Acknowledgements
 
-*   Thanks to the React-team for all your hard work and for being so approachable, a lot of code is shamelessly borrowed from the React-project
-*   Thanks to [jiayihu](https://github.com/jiayihu) for [react-tiny-dom](https://github.com/jiayihu/react-tiny-dom), it was very helpful in understanding the reconciler host-config
-*   Thanks to [nitin42](https://github.com/nitin42) for the tutorial [Making-a-custom-React-renderer](https://github.com/nitin42/Making-a-custom-React-renderer) which was equally helpful
-*   Thanks most of all my wife, for having patience with me when I get fixated on weird ideas..
+A lot of the code and ideas here are shamelessly borrowed directly from React and the React-team. Thank you so much for all your hard work! :clap: :100:
 
 ## Author
 
-Fredrik Höglund ([@EphemeralCircle](https://twitter.com/EphemeralCircle))
+Fredrik Höglund (Twitter: [@EphemeralCircle](https://twitter.com/EphemeralCircle))
+
+---
+
+Because it's really important, here is a final disclaimer:
+
+> :warning: This project does not in any way represent future React-APIs, or how the new Fizz server renderer will work
+
+If you do experiment with this, make sure you include similar disclaimers to avoid any fear, uncertainty and doubt.

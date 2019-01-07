@@ -1,6 +1,6 @@
 {
   "name": "react-aldrin",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "An experimental React Suspense serverside renderer",
   "main": "dist/index.js",
   "scripts": {

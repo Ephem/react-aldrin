@@ -16,7 +16,7 @@ With a few important caveats, this project is a working serverside renderer for 
 npm install react-aldrin react@16.7.0-alpha.2 react-dom@16.7.0-alpha.2 --save
 ```
 
-See `examples/basic` for a full working example.
+See [examples/basic](https://github.com/Ephem/react-aldrin/tree/master/examples/basic) for a full working example.
 
 **Fetching data**
 
@@ -92,7 +92,7 @@ There are also tons of other unsolved problems and limitations:
 *   Multiple roots sharing a cache
 *   Only supports version `16.7.0-alpha.2`
 *   Is likely to break with future React updates
-*   Untested with larger applications, likely to have tons of bugs
+*   Built on ugly hacks (secret internals and monkey patching), likely to be buggy
 
 Finally, this renderer only aim to explore possible future code patterns, not any other of the exciting stuff which the React team is also working on, like improved streaming rendering, partial hydration etc! :tada:
 
@@ -183,8 +183,8 @@ This list is really incomplete, but I thought I'd list at least a couple of thin
 *   Safer serialization of data
 *   More tests
 *   Code cleanup
+*   Better build/project setup
 *   Better support for preloading, cache invalidation and a bunch of other stuff
-*   Test and possibly add support for `componentDidCatch` and `getDerivedStateFromError`
 *   Documenting currently undocumented APIs
 *   Document experiments and lessons learned
 

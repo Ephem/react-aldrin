@@ -180,7 +180,7 @@ These are available for advanced behaviours like using multiple caches or taking
 This list is really incomplete, but I thought I'd list at least a couple of things:
 
 *   Bigger and better examples
-*   Safer serialization of data
+*   :white_check_mark:~~Safer serialization of data~~
 *   More tests
 *   Code cleanup
 *   Better build/project setup

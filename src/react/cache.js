@@ -29,6 +29,7 @@
  */
 
 import { createContext } from 'react';
+import serialize from './utils/serialize';
 
 const Empty = 0;
 const Pending = 1;
@@ -150,7 +151,7 @@ export function createCache(initial, invalidator) {
                 }
                 return value;
             }
-            return JSON.stringify(resourceCache, replacer);
+            return serialize(resourceCache, replacer);
         }
     };
 

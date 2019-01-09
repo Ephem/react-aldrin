@@ -14,7 +14,7 @@ class DispatcherModifier extends _react2.default.Component {
     constructor(...args) {
         super(...args);
 
-        const currentDispatcher = _react2.default.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED.ReactCurrentOwner.currentDispatcher;
+        const currentDispatcher = _react2.default.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED.ReactCurrentDispatcher.current;
 
         currentDispatcher.useEffect = () => undefined;
         currentDispatcher.useImperativeMethods = () => undefined;

@@ -30,11 +30,11 @@
   "dependencies": {
     "fbjs": "0.8.16",
     "raf": "^3.4.0",
-    "react-reconciler": "0.18.0-alpha.2"
+    "react-reconciler": "0.19.0-alpha.0"
   },
   "peerDependencies": {
-    "react": "16.7.0-alpha.2",
-    "react-dom": "16.7.0-alpha.2"
+    "react": "16.8.0-alpha.0",
+    "react-dom": "16.8.0-alpha.0"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",
@@ -54,9 +54,9 @@
     "nodemon": "^1.17.3",
     "prettier": "^1.12.1",
     "prettier-cli": "^0.1.0",
+    "react": "^16.8.0-alpha.0",
+    "react-dom": "^16.8.0-alpha.0",
     "react-testing-library": "^5.3.2",
-    "react": "16.7.0-alpha.2",
-    "react-dom": "16.7.0-alpha.2",
     "rimraf": "^2.6.2",
     "rollup": "^0.58.2",
     "rollup-plugin-babel": "^3.0.4",

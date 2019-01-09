@@ -13,7 +13,7 @@ With a few important caveats, this project is a working serverside renderer for 
 **Install**
 
 ```bash
-npm install react-aldrin react@16.7.0-alpha.2 react-dom@16.7.0-alpha.2 --save
+npm install react-aldrin react@16.8.0-alpha.0 react-dom@16.8.0-alpha.0 --save
 ```
 
 See [examples/basic](https://github.com/Ephem/react-aldrin/tree/master/examples/basic) for a full working example.
@@ -90,7 +90,7 @@ There are also tons of other unsolved problems and limitations:
 
 *   Cache invalidation strategies
 *   Multiple roots sharing a cache
-*   Only supports version `16.7.0-alpha.2`
+*   Only supports version `16.8.0-alpha.0`
 *   Is likely to break with future React updates
 *   Built on ugly hacks (secret internals and monkey patching), likely to be buggy
 

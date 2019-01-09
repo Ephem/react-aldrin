@@ -2,21 +2,31 @@
   "name": "react-aldrin",
   "version": "0.1.1",
   "description": "An experimental React Suspense serverside renderer",
+  "author": "Fredrik Höglund",
+  "license": "MIT",
+  "repository": "github:Ephem/react-aldrin",
+  "homepage": "https://github.com/Ephem/react-aldrin#readme",
+  "bugs": "https://github.com/Ephem/react-aldrin/issues",
   "main": "dist/index.js",
+  "engines": {
+    "node": ">=6.0.0"
+  },
+  "files": ["dist/", "react.js"],
   "scripts": {
-    "build": "npm run build:babel && npm run build:rollup && npm run examples:basic:build",
-    "build:babel": "rimraf dist && babel src/renderer --out-dir dist --ignore __tests__",
+    "build":
+      "npm run build:babel && npm run build:rollup && npm run examples:basic:build",
+    "build:babel":
+      "rimraf dist && babel src/renderer --out-dir dist --ignore __tests__",
     "build:rollup": "rimraf react.js && rollup -c",
     "build:babel:watch": "npm run build:babel -- --watch",
     "build:rollup:watch": "npm run build:rollup -- --watch",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:manual": "babel-node manualtest.js",
-    "examples:basic:build": "cd examples/basic && webpack --mode production --module-bind js=babel-loader && cd ../..",
+    "examples:basic:build":
+      "cd examples/basic && webpack --mode production --module-bind js=babel-loader && cd ../..",
     "examples:basic:start": "node examples/basic"
   },
-  "author": "Fredrik Höglund",
-  "license": "MIT",
   "dependencies": {
     "fbjs": "0.8.16",
     "raf": "^3.4.0",

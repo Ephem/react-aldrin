@@ -48,7 +48,7 @@ import {
 import createMarkupForStyles from './reactUtils/createMarkupForStyles';
 
 import DispatcherModifier from './DispatcherModifier';
-import { PrimaryCacheContext, createCache } from '../react';
+//import { PrimaryCacheContext, createCache } from '../react';
 
 export const ROOT_TYPE = Symbol('ROOT_TYPE');
 export const ROOT_STATIC_TYPE = Symbol('ROOT_STATIC_TYPE');

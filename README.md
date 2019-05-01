@@ -1,5 +1,7 @@
 # :moon: Aldrin - An Experimental React Suspense Serverside Renderer
 
+> Note: This project has been successed by https://github.com/Ephem/react-lightyear
+
 With a few important caveats, this project is a working serverside renderer for React, with out of the box support for Suspense data-fetching and hydration.
 
 > :warning: This project is highly experimental and is not suitable for production use

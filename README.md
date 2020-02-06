@@ -198,10 +198,6 @@ I'd also love to hear from you if you experiment with it! :love_letter:
 
 A lot of the code and ideas here are shamelessly borrowed directly from React and the React-team. Thank you so much for all your hard work! :clap: :100:
 
-## Author
-
-Fredrik Höglund (Twitter: [@EphemeralCircle](https://twitter.com/EphemeralCircle))
-
 ---
 
 Because it's really important, here is a final disclaimer:
